@@ -1,0 +1,66 @@
+CC=i686-elf-gcc
+AS=i686-elf-as
+
+KERNEL_INCLUDE_DIR=includes
+LINKER_SCRIPT=linker.ld
+SYS_ROOT=sysroot
+KERNEL_BIN=kernel.bin
+
+CFLAGS:=$(CFLAGS) --sysroot=$(SYS_ROOT) -isystem=/usr/include -I$(KERNEL_INCLUDE_DIR)
+CFLAGS:=$(CFLAGS) -O2 -g -std=gnu11 -ffreestanding -Wall -Wextra -nostdlib
+LDFLAGS:=$(LDFLAGS)
+LIBS:=$(LIBS)
+
+include src/make.config
+
+OBJS=\
+$(KERNEL_ARCH_CRT_I_OBJS)\
+$(KERNEL_OBJS)\
+$(KERNEL_ARCH_CRT_N_OBJS)
+
+LINK_LIST=\
+$(LDFLAGS)\
+$(KERNEL_ARCH_CRT_I_OBJS)\
+$(KERNEL_OBJS)\
+$(LIBS)\
+$(KERNEL_ARCH_CRT_N_OBJS)
+
+.PHONY: all clean install install_headers install_kernel run
+.SUFFIXES: .o .c .S
+
+all: $(KERNEL_BIN)
+
+$(KERNEL_BIN): $(SYS_ROOT) $(OBJS) $(LINKER_SCRIPT)
+	$(CC) -T $(LINKER_SCRIPT) -o $@ $(CFLAGS) $(LINK_LIST)
+
+# Probably a better way to resolve these, but this works so...
+src/i686/crtbegin.o src/i686/crtend.o:
+	OBJ=`$(CC) $(CFLAGS) $(LDFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
+
+.c.o:
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
+
+.S.o:
+	$(CC) -MD -c $< -o $@ $(CFLAGS)
+
+$(SYS_ROOT): install_headers
+
+run: $(KERNEL_BIN) install
+	qemu-system-i386 -kernel $(SYS_ROOT)/boot/kernel.bin
+
+install: install_headers install_kernel
+
+install_headers:
+	mkdir -p $(SYS_ROOT)/usr/lib
+	mkdir -p $(SYS_ROOT)/usr/include/kernel
+	cp -R --preserve=timestamps $(KERNEL_INCLUDE_DIR)/. $(SYS_ROOT)/usr/include/kernel
+
+install_kernel:
+	mkdir -p $(SYS_ROOT)/boot
+	cp --preserve=timestamps $(KERNEL_BIN) $(SYS_ROOT)/boot
+
+clean:
+	rm -f $(KERNEL_BIN)
+	rm -rf $(SYS_ROOT)
+	rm -f $(OBJS)
+	rm -f $(OBJS:.o=.d)

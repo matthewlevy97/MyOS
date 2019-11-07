@@ -1,0 +1,6 @@
+# Ignore everything except marked below
+*
+
+# Don't ignore the following files
+!.gitignore
+!install.sh
