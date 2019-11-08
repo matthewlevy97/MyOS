@@ -114,7 +114,9 @@ isr_common_stub:
 	mov 36(%esp), %edi
 	// Get the error code
 	mov 40(%esp), %esi
-	
+
+	// TODO: Remove this and add an actual handler
+	// Print ISR number onto screen
 	push %edi
 	push $isr_ascii
 	call kprintf
