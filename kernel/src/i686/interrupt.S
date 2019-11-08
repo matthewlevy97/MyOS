@@ -6,13 +6,13 @@ isr_ascii:
 
 /**
 * Macros to help with the creation of ISRs
+* TODO: Ensure no cli is needed (Interrupts actually disabled)
 */
 .macro ISR_NOERRCODE isr_number
 	.global isr\isr_number
 	.type isr\isr_number, @function
 
-	isr\isr_number :
-		cli
+	isr\isr_number:
 		push $0
 		push $\isr_number
 		jmp isr_common_stub
@@ -23,8 +23,7 @@ isr_ascii:
 	.global isr\isr_number
 	.type isr\isr_number, @function
 
-	isr\isr_number :
-		cli
+	isr\isr_number:
 		push $\isr_number
 		jmp isr_common_stub
 	.size isr\isr_number, . - isr\isr_number

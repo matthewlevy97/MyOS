@@ -124,6 +124,14 @@ static void gdt_set_gate(uint8_t index,
 	gdt_entries[index].access      = access;
 }
 
+/**
+ * @brief      Populate an IDT entry
+ *
+ * @param[in]  index     The index into the idt_entries array
+ * @param[in]  base      The entry point for the ISR
+ * @param[in]  selector  The selector
+ * @param[in]  flags     The flags
+ */
 static void idt_set_gate(uint8_t index,
 	uint32_t base, uint16_t sel, uint8_t flags)
 {
