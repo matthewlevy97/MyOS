@@ -36,6 +36,12 @@ static void gdt_init()
 	gdt_ptr.limit = (sizeof(gdt_entries)) - 1;
 	gdt_ptr.base  = (uint32_t)&gdt_entries;
 
+	/**
+	 * TODO: Update this
+	 * 	User mode should not have full access to all memory
+	 * 	Need a TSS segment
+	 * 	Code and Data segments should NOT overlap
+	 */
 	gdt_set_gate(0, 0, 0, 0, 0);                // Null segment
 	gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF); // Code segment
 	gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // Data segment

@@ -117,34 +117,28 @@ static inline int putchar(const char c)
 	uint16_t entry;
 	bool new_line;
 
-	if(c == '\n') {
-		// TODO: Replace ' ' with '\r'. '\r' currently shows odd.
-		entry = ((uint16_t)' ') | screen.color;
-		new_line = true;
-	} else {
+	switch(c) {
+	case '\n':
+		screen.x_pos = 0;
+		screen.y_pos++;
+		break;
+	case '\r':
+		screen.x_pos = 0;
+		break;
+	default:
 		entry = ((uint16_t)c) | screen.color;
-		new_line = false;
+		*(VGA_BUFFER + (screen.x_pos) + (screen.y_pos * screen.width)) = entry;
+		screen.x_pos++;
 	}
 
-	*(VGA_BUFFER + (screen.x_pos) + (screen.y_pos * screen.width)) = entry;
-
-	if(++screen.x_pos >= screen.width) {
+	if(screen.x_pos >= screen.width) {
 		screen.x_pos = 0;
 		++screen.y_pos;
-
-		if(screen.y_pos >= screen.height) {
-			screen_moveup();
-			screen.x_pos = 0;
-		}
 	}
 
-	if(new_line) {
+	if(screen.y_pos >= screen.height) {
+		screen_moveup();
 		screen.x_pos = 0;
-		++screen.y_pos;
-
-		if(screen.y_pos >= screen.height) {
-			screen_moveup();
-		}
 	}
 
 	return 1;
@@ -190,6 +184,7 @@ static inline int putstring(const char *str)
 	while(*ptr) {
 		putchar(*ptr);
 		ptr++;
+		bytes_written++;
 	}
 
 	return bytes_written;
@@ -199,15 +194,23 @@ static void screen_moveup()
 {
 	// Copy up line by line
 	uint16_t counter = screen.height;
-	uint16_t *current_line = (uint16_t*)(VGA_BUFFER + screen.width);
+	uint16_t *current_line = (uint16_t*)(VGA_BUFFER);
 	uint16_t *next_line    = (uint16_t*)(current_line + screen.width);
 
 	while(counter--) {
 		memcpy(current_line, next_line, screen.width * sizeof(uint16_t));
+
+		current_line = next_line;
+		next_line    = (uint16_t*)(current_line + screen.width);
 	}
+
+	screen.y_pos--;
 }
 
 static void screen_clear()
 {
 	memset((void*)VGA_BUFFER, 0, screen.width * screen.height * sizeof(uint16_t));
+
+	screen.x_pos = 0;
+	screen.y_pos = 0;
 }

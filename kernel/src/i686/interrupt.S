@@ -1,3 +1,7 @@
+.section .rodata
+isr_ascii:
+	.asciz "ISR: 0x%x\n"
+
 .section .text
 
 /**
@@ -45,9 +49,9 @@
 * 14 - Page fault (pushes an error code)
 * 15 - Unknown interrupt exception
 * 16 - Coprocessor fault
-* 17 - Alignment check exception
+* 17 - Alignment check exception (pushes an error code)
 * 18 - Machine check exception
-* 19-31 - Reserved
+* 19-31 - Reserved (pushes an error code for 30)
 */
 
 ISR_NOERRCODE 0
@@ -67,7 +71,7 @@ ISR_ERRCODE   13
 ISR_ERRCODE   14
 ISR_NOERRCODE 15
 ISR_NOERRCODE 16
-ISR_NOERRCODE 17
+ISR_ERRCODE   17
 ISR_NOERRCODE 18
 ISR_NOERRCODE 19
 ISR_NOERRCODE 20
@@ -80,11 +84,11 @@ ISR_NOERRCODE 26
 ISR_NOERRCODE 27
 ISR_NOERRCODE 28
 ISR_NOERRCODE 29
-ISR_NOERRCODE 30
+ISR_ERRCODE   30
 ISR_NOERRCODE 31
 
-.extern isr_handler
-.type isr_handler, @function
+.extern kprintf
+.type kprintf, @function
 
 /**
 * This is our common ISR stub. It saves the processor state, sets
@@ -95,10 +99,10 @@ ISR_NOERRCODE 31
 .type isr_common_stub, @function
 
 isr_common_stub:
-	pusha                     // Pushes edi,esi,ebp,esp,ebx,edx,ecx,eax
+	pusha           // Push: edi,esi,ebp,esp,ebx,edx,ecx,eax
 
-	mov %ds, %ax              // Lower 16-bits of eax = ds.
-	push %eax                 // save the data segment descriptor
+	mov %ds, %ax    // Lower 16-bits of eax = ds.
+	push %eax       // save the data segment descriptor
 
 	mov $0x10, %ax  // load the kernel data segment descriptor
 	mov %ax, %ds
@@ -106,7 +110,20 @@ isr_common_stub:
 	mov %ax, %fs
 	mov %ax, %gs
 
-	call isr_handler
+	// Get the ISR number
+	mov 36(%esp), %edi
+	// Get the error code
+	mov 40(%esp), %esi
+
+	cmp $0xD, %edi
+	jne .1
+	call kpanic
+
+.1:
+	push %edi
+	push $isr_ascii
+	call kprintf
+	add $8, %esp
 
 	pop %eax        // reload the original data segment descriptor
 	mov %ax, %ds
@@ -114,8 +131,7 @@ isr_common_stub:
 	mov %ax, %fs
 	mov %ax, %gs
 
-	popa           // Pops edi,esi,ebp...
-	add $8, %esp     // Cleans up the pushed error code and pushed ISR number
-	sti
-	iret           // pops 5 things at once: CS, EIP, EFLAGS, SS, and ESP
+	popa
+	add $8, %esp   // Clean up ISR number and error code
+	iret           // pops: CS, EIP, EFLAGS, SS, and ESP
 .size isr_common_stub, . - isr_common_stub
