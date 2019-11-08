@@ -25,7 +25,7 @@ $(KERNEL_OBJS)\
 $(LIBS)\
 $(KERNEL_ARCH_CRT_N_OBJS)
 
-.PHONY: all clean install install_headers install_kernel run
+.PHONY: all clean install install_headers install_kernel run debug
 .SUFFIXES: .o .c .S
 
 all: $(KERNEL_BIN)
@@ -45,8 +45,11 @@ src/i686/crtbegin.o src/i686/crtend.o:
 
 $(SYS_ROOT): install_headers
 
-run: $(KERNEL_BIN) install
+run: install
 	qemu-system-i386 -kernel $(SYS_ROOT)/boot/kernel.bin
+
+debug: install
+	qemu-system-i386 -s -S -kernel $(SYS_ROOT)/boot/kernel.bin
 
 install: install_headers install_kernel
 
@@ -55,7 +58,7 @@ install_headers:
 	mkdir -p $(SYS_ROOT)/usr/include/kernel
 	cp -R --preserve=timestamps $(KERNEL_INCLUDE_DIR)/. $(SYS_ROOT)/usr/include/kernel
 
-install_kernel:
+install_kernel: $(KERNEL_BIN)
 	mkdir -p $(SYS_ROOT)/boot
 	cp --preserve=timestamps $(KERNEL_BIN) $(SYS_ROOT)/boot
 

@@ -10,7 +10,8 @@
 /*
 	General Constants
 */
-.set STACK_SIZE, 16384          /* 16 kb */
+.set KB, 1024             /* 1kb */
+.set STACK_SIZE, 16*KB    /* 16 kb */
  
 /* 
 	Multiboot Header
@@ -31,6 +32,9 @@ stack_bottom:
 stack_top:
 
 .section .text
+
+.extern kinit
+.type kinit, @function
 
 .global _start
 .type _start, @function

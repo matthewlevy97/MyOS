@@ -2,6 +2,10 @@
 
 #include <stddef.h>
 
+#define KPRINT_DEBUG   "[*] "
+#define KPRINT_ERROR   "[-] "
+#define KPRINT_SUCCESS "[+] "
+
 void kprint_init();
 
 int kprintf(const char *format, ...);

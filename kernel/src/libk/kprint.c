@@ -8,7 +8,7 @@
  * @brief      Holds information related to the current position of the cursor
  * 				on the screen
  */
-struct terminal_screen {
+struct terminal_screen_s {
 	uint16_t width;
 	uint16_t height;
 
@@ -18,8 +18,8 @@ struct terminal_screen {
 	uint16_t y_pos;
 };
 
-static volatile uint16_t      *VGA_BUFFER;
-static struct terminal_screen  screen;
+static volatile uint16_t       *VGA_BUFFER;
+static struct terminal_screen_s screen;
 
 static inline int  putchar(const char c);
 static inline int  putint(const int i);

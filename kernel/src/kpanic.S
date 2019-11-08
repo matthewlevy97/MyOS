@@ -1,8 +1,11 @@
 .section .rodata
 kpanic_string:
-	.ascii "Kernel Panic!\0"
+	.ascii "Kernel Panic!\n\0"
 
 .section .text
+
+.extern kprintf
+.type kprintf, @function
 
 .global kpanic
 .type kpanic, @function
