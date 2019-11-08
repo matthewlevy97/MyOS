@@ -13,7 +13,6 @@ void FUNCTION_NO_RETURN kinit()
 	descriptor_tables_init();
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
-	asm volatile ("int $0x8");
 
 	while(1);
 	__builtin_unreachable ();

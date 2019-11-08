@@ -114,12 +114,7 @@ isr_common_stub:
 	mov 36(%esp), %edi
 	// Get the error code
 	mov 40(%esp), %esi
-
-	cmp $0xD, %edi
-	jne .1
-	call kpanic
-
-.1:
+	
 	push %edi
 	push $isr_ascii
 	call kprintf
