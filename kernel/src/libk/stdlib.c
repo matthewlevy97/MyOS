@@ -58,21 +58,21 @@ size_t itoa(char *buffer, size_t buffer_len, int value, size_t base)
 
 	// Ensure we actually did something
 	if(digits) {
-		digits--;
-
 		if(negative && digits + 1 < buffer_len) {
 			*ptr++ =  '-';
 			digits++;
 		}
 
+		// Append NULL byte
+		if(++digits < buffer_len) {
+			*ptr = '\0';
+		} else {
+			*(--ptr) = '\0';
+			digits--;
+		}
+
 		// Values get inserted into buffer backwords
 		buffer = reverse(buffer, digits);
-
-		// Append NULL byte
-		if(digits + 1 < buffer_len)
-			*ptr = '\0';
-		else
-			*(--ptr) = '\0';
 	}
 
 	return digits;
