@@ -28,10 +28,6 @@ static inline int  putstring(const char *str);
 static        void screen_moveup();
 static        void screen_clear();
 
-#if defined(__UNIT_TEST) && defined(__UNIT_TEST_KPRINT)
-static void unit_test();
-#endif
-
 /**
  * @brief      Initialize the screen and prepare for writing
  */
@@ -46,10 +42,6 @@ void kprint_init()
 	screen.y_pos  = 0;
 
 	screen_clear();
-
-#if defined(__UNIT_TEST) && defined(__UNIT_TEST_KPRINT)
-	unit_test();
-#endif
 }
 
 /**
@@ -219,17 +211,3 @@ static void screen_clear()
 {
 	memset((void*)VGA_BUFFER, 0, screen.width * screen.height * sizeof(uint16_t));
 }
-
-/**
- * @brief      Runs tests to ensure correctness in code
- */
-#if defined(__UNIT_TEST) && defined(__UNIT_TEST_KPRINT)
-static void unit_test()
-{
-	kprintf("Testing kprintf:\n");
-	kprintf("\tDecimal: %d %d %d\n", 100, 10, -100);
-	kprintf("\tCharacter: %c %c\n", '?', 'Z');
-	kprintf("\tString: <%s>\n", "Hello, World!");
-	kprintf("\tHex: $%x $%x $%x\n", 0xAF, 0xDE, 0xFF);
-}
-#endif
