@@ -43,6 +43,4 @@ _start:
 	cli
 1:	hlt
 	jmp 1b
-
-// Size of _start function
 .size _start, . - _start

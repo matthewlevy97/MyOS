@@ -1,13 +1,16 @@
-#include <helpers.h>
-#include <stdint.h>
+#include <macros.h>
+#include <kernel/kprint.h>
+#include <kernel/kpanic.h>
 
-static uint16_t* const VGA_MEMORY = (uint16_t*) 0xB8000;
-
+/**
+ * @brief      Entry point into kernel for C code
+ */
 void FUNCTION_NO_RETURN kinit()
 {
-	uint16_t* terminal_buffer = VGA_MEMORY;
+	// Initialize output
+	kprint_init();
 
-	terminal_buffer[0] = (uint16_t)('a') | (uint16_t)(4 << 8);
+	kprintf("Kernel Loaded!\n");
 
 	while(1);
 	__builtin_unreachable ();
