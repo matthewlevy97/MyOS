@@ -20,5 +20,6 @@ void isr_handler(uint8_t isr_number, uint8_t error_code)
 
 	} else {
 		// TODO: Handle ISR
+		kprintf("ISR: 0x%x", isr_number);
 	}
 }

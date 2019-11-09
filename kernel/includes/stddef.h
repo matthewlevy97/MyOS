@@ -1,5 +1,11 @@
 #pragma once
 
+/*
+ * Easy calculating of sizes
+*/
+#define KB (1 << 10)
+#define MB (1 << 20)
+
 #define NULL ((void*)0)
 
 typedef signed char  int8_t;

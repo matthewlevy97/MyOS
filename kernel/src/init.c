@@ -1,6 +1,7 @@
 #include <kernel/kprint.h>
 #include <kernel/timer.h>
 #include <kernel/serial.h>
+#include <kernel/kmalloc.h>
 #include <kernel/i686/pic.h>
 #include <kernel/i686/descriptor_tables.h>
 #include <macros.h>
@@ -23,6 +24,9 @@ void FUNCTION_NO_RETURN kinit()
 
 	timer_init(50);
 	kprintf(KPRINT_DEBUG "PIT Initialized\n");
+
+	kmalloc_init();
+	kprintf(KPRINT_DEBUG "KMalloc Initialized\n");
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 
