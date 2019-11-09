@@ -1,4 +1,5 @@
 #include <kernel/kprint.h>
+#include <kernel/serial.h>
 
 #include <stdarg.h>
 #include <string.h>
@@ -16,6 +17,8 @@ struct terminal_screen_s {
 
 	uint16_t x_pos;
 	uint16_t y_pos;
+
+	uint16_t serial_output;
 };
 
 static volatile uint16_t       *VGA_BUFFER;
@@ -41,7 +44,25 @@ void kprint_init()
 	screen.x_pos  = 0;
 	screen.y_pos  = 0;
 
+	screen.serial_output = 0;
+
 	screen_clear();
+}
+
+/**
+ * @brief      Enables output to serial port
+ */
+void enable_serial_output()
+{
+	screen.serial_output = 1;
+}
+
+/**
+ * @brief      Disables output to serial port
+ */
+void disable_serial_output()
+{
+	screen.serial_output = 0;
 }
 
 /**
@@ -115,6 +136,10 @@ int ksnprintf(char *str, size_t size, const char *format, ...)
 static inline int putchar(const char c)
 {
 	uint16_t entry;
+
+	if(screen.serial_output) {
+		serial_write(c);
+	}
 
 	switch(c) {
 	case '\n':

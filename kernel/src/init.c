@@ -1,5 +1,6 @@
 #include <kernel/kprint.h>
 #include <kernel/timer.h>
+#include <kernel/serial.h>
 #include <kernel/i686/pic.h>
 #include <kernel/i686/descriptor_tables.h>
 #include <macros.h>
@@ -13,10 +14,12 @@ void FUNCTION_NO_RETURN kinit()
 	kprint_init();
 	pic_init();
 	descriptor_tables_init();
+	serial_init();
 	timer_init(50);
 
+	enable_serial_output();
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
-	
+
 	// Enable interrupts
 	asm volatile ("sti");
 
