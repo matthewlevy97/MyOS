@@ -22,7 +22,7 @@ void FUNCTION_NO_RETURN kinit()
 	kprintf(KPRINT_DEBUG "Descriptor Tables Initialized\n");
 
 	timer_init(50);
-	kprintf(KPRINT_DEBUG "PIT Initialized\n");	
+	kprintf(KPRINT_DEBUG "PIT Initialized\n");
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 
