@@ -1,7 +1,7 @@
 #include <kernel/kprint.h>
+#include <kernel/timer.h>
 #include <kernel/i686/pic.h>
 #include <kernel/i686/descriptor_tables.h>
-#include <kernel/timer.h>
 #include <macros.h>
 
 /**

@@ -21,6 +21,8 @@
 #define ICW4_BUF_MASTER	0x0C		/* Buffered mode/master */
 #define ICW4_SFNM		0x10		/* Special fully nested (not) */
 
+#define PIC_ACK         0x20        /* Acknowledge an interrupt from the PIC */
+
 void pic_init();
 
 void set_pic_mask(uint16_t port, uint8_t mask);

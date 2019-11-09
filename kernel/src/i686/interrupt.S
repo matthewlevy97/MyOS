@@ -1,23 +1,13 @@
-.section .rodata
-isr_ascii:
-	.asciz "ISR: 0x%x\n"
-irq_ascii:
-	.asciz "IRQ: 0x%x\n"
-
 .section .text
 
-.extern kprintf
-.type kprintf, @function
+.extern isr_handler
+.type isr_handler, @function
 
 .global isr_common_stub
 .type isr_common_stub, @function
 
-.global irq_common_stub
-.type irq_common_stub, @function
-
 /**
 * Macros to help with the creation of ISRs
-* TODO: Ensure no cli is needed (Interrupts actually disabled)
 */
 .macro ISR_NOERRCODE isr_number
 	.global isr\isr_number
@@ -42,8 +32,6 @@ irq_ascii:
 
 /**
 * Macros to help with the creation of IRQs
-* TODO: Ensure no cli is needed (Interrupts actually disabled)
-* TODO: Is the 'push $0' needed?
 */
 .macro IRQ irq_number isr_number
 	.global irq\irq_number
@@ -52,7 +40,7 @@ irq_ascii:
 	irq\irq_number:
 		push $0
 		push $\isr_number
-		jmp irq_common_stub
+		jmp isr_common_stub
 	.size irq\irq_number, . - irq\irq_number
 .endm
 
@@ -171,11 +159,10 @@ isr_common_stub:
 	// Get the error code
 	mov 40(%esp), %esi
 
-	// TODO: Remove this and add an actual handler
-	// Print ISR number onto screen
+	// TODO: Determine what information I need to send to isr_handler
+	push %esi
 	push %edi
-	push $isr_ascii
-	call kprintf
+	call isr_handler
 	add $8, %esp
 
 	pop %eax        // reload the original data segment descriptor
@@ -188,46 +175,3 @@ isr_common_stub:
 	add $8, %esp   // Clean up ISR number and error code
 	iret           // pops: CS, EIP, EFLAGS, SS, and ESP
 .size isr_common_stub, . - isr_common_stub
-
-/**
-* Acts the same way as the isr_common_stub function
-*/
-irq_common_stub:
-	pusha           // Push: edi,esi,ebp,esp,ebx,edx,ecx,eax
-
-	mov %ds, %ax    // Lower 16-bits of eax = ds.
-	push %eax       // save the data segment descriptor
-
-	mov $0x10, %ax  // load the kernel data segment descriptor
-	mov %ax, %ds
-	mov %ax, %es
-	mov %ax, %fs
-	mov %ax, %gs
-
-	// Get the IRQ number
-	mov 36(%esp), %edi
-	sub $0x20, %edi
-
-	// TODO: Remove this and add an actual handler
-	// Print IRQ number onto screen
-	push %edi
-	push $irq_ascii
-	call kprintf
-	add $8, %esp
-
-	// Acknowledge the IRQ
-	push $0x20
-	push $0x20
-	call outb
-	add $8, %esp
-
-	pop %eax        // reload the original data segment descriptor
-	mov %ax, %ds
-	mov %ax, %es
-	mov %ax, %fs
-	mov %ax, %gs
-
-	popa
-	add $8, %esp   // Clean up ISR number and error code
-	iret
-.size irq_common_stub, . - irq_common_stub

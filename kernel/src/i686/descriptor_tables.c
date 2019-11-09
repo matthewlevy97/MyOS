@@ -1,4 +1,5 @@
 #include <kernel/i686/descriptor_tables.h>
+#include <kernel/i686/isr.h>
 #include <string.h>
 
 extern void gdt_flush(uint32_t address);
@@ -7,7 +8,7 @@ extern void idt_flush(uint32_t address);
 struct gdt_entry_s gdt_entries[5];
 struct gdt_ptr_s   gdt_ptr;
 
-struct idt_entry_s idt_entries[256];
+struct idt_entry_s idt_entries[MAX_ISR_NUMBER];
 struct idt_ptr_s   idt_ptr;
 
 static void gdt_init();
