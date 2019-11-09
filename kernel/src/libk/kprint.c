@@ -115,7 +115,6 @@ int ksnprintf(char *str, size_t size, const char *format, ...)
 static inline int putchar(const char c)
 {
 	uint16_t entry;
-	bool new_line;
 
 	switch(c) {
 	case '\n':
