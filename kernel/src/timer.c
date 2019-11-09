@@ -1,5 +1,6 @@
 #include <kernel/timer.h>
 #include <kernel/portio.h>
+#include <kernel/i686/pic.h>
 
 /**
  * @brief      Initialize the PIT timer
@@ -25,4 +26,7 @@ void timer_init(uint32_t frequency)
 	// Send the frequency divisor.
 	outb(PIT_CHAN0, l);
 	outb(PIT_CHAN0, h);
+
+	// Enable PIT IRQ
+	enable_irq(0);
 }

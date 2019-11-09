@@ -12,19 +12,22 @@ void FUNCTION_NO_RETURN kinit()
 {
 	// Initialization
 	kprint_init();
-	pic_init();
-	descriptor_tables_init();
 	serial_init();
-	timer_init(50);
-
 	enable_serial_output();
+
+	pic_init();
+	kprintf(KPRINT_DEBUG "PIC Initialized\n");
+
+	descriptor_tables_init();
+	kprintf(KPRINT_DEBUG "Descriptor Tables Initialized\n");
+
+	timer_init(50);
+	kprintf(KPRINT_DEBUG "PIT Initialized\n");	
+
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 
 	// Enable interrupts
 	asm volatile ("sti");
-
-	// Enable timer IRQ
-	enable_irq(0);
 
 	while(1);
 	__builtin_unreachable ();

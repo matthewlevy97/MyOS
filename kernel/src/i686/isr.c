@@ -9,8 +9,7 @@ void isr_handler(uint8_t isr_number, uint8_t error_code)
 	if(isr_number >= IRQ0 && isr_number <= IRQ15) {
 		isr_number -= IRQ0;
 
-		// Handle IRQ
-		kprintf("IRQ: 0x%x\n", isr_number);
+		// TODO: Handle IRQ
 
 		// Send ack
 		outb(PIC1, PIC_ACK);
@@ -20,7 +19,6 @@ void isr_handler(uint8_t isr_number, uint8_t error_code)
 			outb(PIC2, PIC_ACK);
 
 	} else {
-		// Handle ISR
-		kprintf("ISR: 0x%x\n", isr_number);
+		// TODO: Handle ISR
 	}
 }
