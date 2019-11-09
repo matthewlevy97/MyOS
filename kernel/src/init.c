@@ -1,6 +1,7 @@
 #include <kernel/kprint.h>
-#include <kernel/kpanic.h>
+#include <kernel/i686/pic.h>
 #include <kernel/i686/descriptor_tables.h>
+#include <kernel/timer.h>
 #include <macros.h>
 
 /**
@@ -10,7 +11,9 @@ void FUNCTION_NO_RETURN kinit()
 {
 	// Initialization
 	kprint_init();
+	pic_init();
 	descriptor_tables_init();
+	timer_init(50);
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 

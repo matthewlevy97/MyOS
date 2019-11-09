@@ -1,8 +1,19 @@
 .section .rodata
 isr_ascii:
 	.asciz "ISR: 0x%x\n"
+irq_ascii:
+	.asciz "IRQ: 0x%x\n"
 
 .section .text
+
+.extern kprintf
+.type kprintf, @function
+
+.global isr_common_stub
+.type isr_common_stub, @function
+
+.global irq_common_stub
+.type irq_common_stub, @function
 
 /**
 * Macros to help with the creation of ISRs
@@ -27,6 +38,22 @@ isr_ascii:
 		push $\isr_number
 		jmp isr_common_stub
 	.size isr\isr_number, . - isr\isr_number
+.endm
+
+/**
+* Macros to help with the creation of IRQs
+* TODO: Ensure no cli is needed (Interrupts actually disabled)
+* TODO: Is the 'push $0' needed?
+*/
+.macro IRQ irq_number isr_number
+	.global irq\irq_number
+	.type irq\irq_number, @function
+
+	irq\irq_number:
+		push $0
+		push $\isr_number
+		jmp irq_common_stub
+	.size irq\irq_number, . - irq\irq_number
 .endm
 
 /**
@@ -86,16 +113,46 @@ ISR_NOERRCODE 29
 ISR_ERRCODE   30
 ISR_NOERRCODE 31
 
-.extern kprintf
-.type kprintf, @function
+/*
+* IRQ Numbers
+* 0  - Programmable Interrupt Timer Interrupt
+* 1  - Keyboard Interrupt
+* 2  - Cascade (used internally by the two PICs. never raised)
+* 3  - COM2 (if enabled)
+* 4  - COM1 (if enabled)
+* 5  - LPT2 (if enabled)
+* 6  - Floppy Disk
+* 7  - LPT1 / Unreliable "spurious" interrupt (usually)
+* 8  - CMOS real-time clock (if enabled)
+* 9  - Free for peripherals / legacy SCSI / NIC
+* 10 - Free for peripherals / SCSI / NIC
+* 11 - Free for peripherals / SCSI / NIC
+* 12 - PS2 Mouse
+* 13 - FPU / Coprocessor / Inter-processor
+* 14 - Primary ATA Hard Disk
+* 15 - Secondary ATA Hard Disk
+*/
+IRQ 0,  32
+IRQ 1,  33
+IRQ 2,  34
+IRQ 3,  35
+IRQ 4,  36
+IRQ 5,  37
+IRQ 6,  38
+IRQ 7,  39
+IRQ 8,  40
+IRQ 9,  41
+IRQ 10, 42
+IRQ 11, 43
+IRQ 12, 44
+IRQ 13, 45
+IRQ 14, 46
+IRQ 15, 47
 
 /**
 * This is our common ISR stub. It saves the processor state, sets
-* up for kernel mode segments, calls the C-level fault handler,
-* and finally restores the stack frame.
+* up for kernel mode segments, and finally restores the stack frame.
 */
-.global isr_common_stub
-.type isr_common_stub, @function
 
 isr_common_stub:
 	pusha           // Push: edi,esi,ebp,esp,ebx,edx,ecx,eax
@@ -131,3 +188,46 @@ isr_common_stub:
 	add $8, %esp   // Clean up ISR number and error code
 	iret           // pops: CS, EIP, EFLAGS, SS, and ESP
 .size isr_common_stub, . - isr_common_stub
+
+/**
+* Acts the same way as the isr_common_stub function
+*/
+irq_common_stub:
+	pusha           // Push: edi,esi,ebp,esp,ebx,edx,ecx,eax
+
+	mov %ds, %ax    // Lower 16-bits of eax = ds.
+	push %eax       // save the data segment descriptor
+
+	mov $0x10, %ax  // load the kernel data segment descriptor
+	mov %ax, %ds
+	mov %ax, %es
+	mov %ax, %fs
+	mov %ax, %gs
+
+	// Get the IRQ number
+	mov 36(%esp), %edi
+	sub $0x20, %edi
+
+	// TODO: Remove this and add an actual handler
+	// Print IRQ number onto screen
+	push %edi
+	push $irq_ascii
+	call kprintf
+	add $8, %esp
+
+	// Acknowledge the IRQ
+	push $0x20
+	push $0x20
+	call outb
+	add $8, %esp
+
+	pop %eax        // reload the original data segment descriptor
+	mov %ax, %ds
+	mov %ax, %es
+	mov %ax, %fs
+	mov %ax, %gs
+
+	popa
+	add $8, %esp   // Clean up ISR number and error code
+	iret
+.size irq_common_stub, . - irq_common_stub

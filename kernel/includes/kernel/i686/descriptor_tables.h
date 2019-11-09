@@ -29,6 +29,59 @@ struct idt_ptr_s {
    uint32_t base;                // The address of the first element in our idt_entry_t array.
 } __attribute__((packed));
 
+enum {
+   ISR0 = 0,
+   ISR1,
+   ISR2,
+   ISR3,
+   ISR4,
+   ISR5,
+   ISR6,
+   ISR7,
+   ISR8,
+   ISR9,
+   ISR10,
+   ISR11,
+   ISR12,
+   ISR13,
+   ISR14,
+   ISR15,
+   ISR16,
+   ISR17,
+   ISR18,
+   ISR19,
+   ISR20,
+   ISR21,
+   ISR22,
+   ISR23,
+   ISR24,
+   ISR25,
+   ISR26,
+   ISR27,
+   ISR28,
+   ISR29,
+   ISR30,
+   ISR31
+};
+enum {
+   IRQ0 = 32,
+   IRQ1,
+   IRQ2,
+   IRQ3,
+   IRQ4,
+   IRQ5,
+   IRQ6,
+   IRQ7,
+   IRQ8,
+   IRQ9,
+   IRQ10,
+   IRQ11,
+   IRQ12,
+   IRQ13,
+   IRQ14,
+   IRQ15,
+};
+
 void descriptor_tables_init();
 
 extern void isr0();
@@ -63,3 +116,20 @@ extern void isr28();
 extern void isr29();
 extern void isr30();
 extern void isr31();
+
+extern void irq0();
+extern void irq1();
+extern void irq2();
+extern void irq3();
+extern void irq4();
+extern void irq5();
+extern void irq6();
+extern void irq7();
+extern void irq8();
+extern void irq9();
+extern void irq10();
+extern void irq11();
+extern void irq12();
+extern void irq13();
+extern void irq14();
+extern void irq15();
