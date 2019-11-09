@@ -22,7 +22,9 @@
 #define ICW4_SFNM		0x10		/* Special fully nested (not) */
 
 #define PIC_ACK         0x20        /* Acknowledge an interrupt from the PIC */
+#define PIC_CASCADE_BIT 0x02        /* Bit enabled on master to allow for slave PIC interrupts */
 
 void pic_init();
 
-void set_pic_mask(uint16_t port, uint8_t mask);
+void enable_irq(uint8_t irq);
+void disable_irq(uint8_t irq);

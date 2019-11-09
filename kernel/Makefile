@@ -46,10 +46,10 @@ src/i686/crtbegin.o src/i686/crtend.o:
 $(SYS_ROOT): install_headers
 
 run: install
-	qemu-system-i386 -kernel $(SYS_ROOT)/boot/kernel.bin -no-reboot
+	qemu-system-i386 -kernel $(SYS_ROOT)/boot/kernel.bin -serial stdio -no-reboot
 
 debug: install
-	qemu-system-i386 -s -S -kernel $(SYS_ROOT)/boot/kernel.bin -d int,cpu_reset -no-reboot
+	qemu-system-i386 -s -S -kernel $(SYS_ROOT)/boot/kernel.bin -serial stdio -d int,cpu_reset -no-reboot
 
 install: install_headers install_kernel
 

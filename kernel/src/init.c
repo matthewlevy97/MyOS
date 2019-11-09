@@ -16,6 +16,12 @@ void FUNCTION_NO_RETURN kinit()
 	timer_init(50);
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
+	
+	// Enable interrupts
+	asm volatile ("sti");
+
+	// Enable timer IRQ
+	enable_irq(0);
 
 	while(1);
 	__builtin_unreachable ();

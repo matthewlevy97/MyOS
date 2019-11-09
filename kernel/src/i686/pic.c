@@ -5,31 +5,57 @@
 
 static void remap(uint16_t master_base, uint16_t slave_base);
 
+static uint8_t master_mask, slave_mask;
+
 void pic_init()
 {
-	uint8_t master_mask, slave_mask;
-
 	remap(0x20, 0x28);
 
-	// XXX: Enables timer interrupt only
-	master_mask = 0xFF ^ 1;
+	// Disable everything
+	master_mask = 0xFF;
 	slave_mask  = 0xFF;
 
-	set_pic_mask(PIC1_DATA, master_mask);
-	set_pic_mask(PIC2_DATA, slave_mask);
-
-	// Enable interrupts
-	asm volatile ("sti");
+	outb(PIC1_DATA, master_mask);
+	outb(PIC2_DATA, slave_mask);
 }
 
-/**
- * @brief      Sets the IRQ mask for the PICs
- *
- * @param[in]  mask  Setting a bit disables that IRQ
- */
-void set_pic_mask(uint16_t port, uint8_t mask)
+void enable_irq(uint8_t irq)
 {
-    outb(port, mask);
+	if(irq < 8) {
+		// Enable on master PIC
+		master_mask &= ~(1 << irq);
+		outb(PIC1_DATA, master_mask);
+	} else {
+		// Enable on slave PIC
+		irq -= 8;
+
+		// IRQ2 on master enables cascade
+		master_mask &= ~(1 << PIC_CASCADE_BIT);
+		slave_mask &= ~(1 << irq);
+
+		outb(PIC1_DATA, master_mask);
+		outb(PIC2_DATA, slave_mask);
+	}
+}
+
+void disable_irq(uint8_t irq)
+{
+	if(irq < 8) {
+		// Disable on master PIC
+		master_mask |= (1 << irq);
+		outb(PIC1_DATA, master_mask);
+	} else {
+		// Disable on slave PIC
+		irq -= 8;
+		slave_mask |= (1 << irq);
+		outb(PIC2_DATA, slave_mask);
+
+		if(slave_mask == 0xFF) {
+			// If nothing on slave, we can disable cascade
+			master_mask |= (1 << PIC_CASCADE_BIT);
+			outb(PIC1_DATA, master_mask);
+		}
+	}
 }
 
 /**
