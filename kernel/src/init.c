@@ -1,7 +1,8 @@
 #include <macros.h>
 #include <kernel/kprint.h>
 #include <kernel/kpanic.h>
-#include <kernel/multiboot.h>
+#include <kernel/multiboot2.h>
+#include <kernel/multiboot_parser.h>
 #include <kernel/serial.h>
 #include <kernel/timer.h>
 #include <kernel/i686/descriptor_tables.h>
@@ -11,7 +12,7 @@
 /**
  * @brief      Entry point into kernel for C code
  */
-void FUNCTION_NO_RETURN kinit(struct multiboot_tag * mb_header, uint32_t mb_magic)
+void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 {
 	// Initialization
 	kprint_init();
@@ -23,17 +24,12 @@ void FUNCTION_NO_RETURN kinit(struct multiboot_tag * mb_header, uint32_t mb_magi
 		kprintf(KPRINT_ERROR "Not loaded with Multiboot 2!\n");
 		kpanic();
 	}
-
-	/**
-	 * Parse the multiboot header.
-	 * The header is in the following format:
-	 * 			+-------------------+
-	 *	u32     | total_size        |
-	 *	u32     | reserved          |
-     *   	 	+-------------------+
-	 * We cheat and use the multiboot_tag struct here. Ignore names
-	 */
-	kprintf(KPRINT_DEBUG "Multiboot Header Length: 0x%x\n", mb_header->type);
+	
+	struct multiboot_tag_string *cmdline;
+	cmdline = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_CMDLINE);
+	if(cmdline) {
+		kprintf(KPRINT_DEBUG "Command Line: %s\n", boot_loader->string);
+	}
 
 	pic_init();
 	kprintf(KPRINT_DEBUG "PIC Initialized\n");

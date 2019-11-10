@@ -8,6 +8,7 @@ LINKER_SCRIPT=linker.ld
 SYS_ROOT=sysroot
 KERNEL_BIN=$(KERNEL_NAME).bin
 KERNEL_ISO=$(KERNEL_NAME).iso
+MULTIBOOT_CMDLINE="serial"
 
 CFLAGS:=$(CFLAGS) --sysroot=$(SYS_ROOT) -isystem=/usr/include -I$(KERNEL_INCLUDE_DIR)
 CFLAGS:=$(CFLAGS) -O2 -g -std=gnu11 -ffreestanding -Wall -Wextra -nostdlib
@@ -64,12 +65,12 @@ install_headers:
 install_kernel: $(KERNEL_BIN)
 	mkdir -p $(SYS_ROOT)/boot/grub
 	cp --preserve=timestamps $(KERNEL_BIN) $(SYS_ROOT)/boot
-	@echo 'set timeout=0'                    > $(SYS_ROOT)/boot/grub/grub.cfg
-	@echo 'set default=0'                    >> $(SYS_ROOT)/boot/grub/grub.cfg
-	@echo "menuentry '$(KERNEL_NAME)' {"     >> $(SYS_ROOT)/boot/grub/grub.cfg
-	@echo "\tmultiboot2 /boot/$(KERNEL_BIN)" >> $(SYS_ROOT)/boot/grub/grub.cfg
-	@echo '\tboot'                           >> $(SYS_ROOT)/boot/grub/grub.cfg
-	@echo '}'                                >> $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo 'set timeout=0'                     > $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo 'set default=0'                     >> $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo "menuentry '$(KERNEL_NAME)' {"      >> $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo "\tmultiboot2 /boot/$(KERNEL_BIN) $(MULTIBOOT_CMDLINE)" >> $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo '\tboot'                            >> $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo '}'                                 >> $(SYS_ROOT)/boot/grub/grub.cfg
 
 build:
 	@grub-mkrescue -o $(KERNEL_ISO) $(SYS_ROOT)
