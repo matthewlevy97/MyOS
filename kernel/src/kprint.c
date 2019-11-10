@@ -6,6 +6,10 @@
 #include <stdlib.h>
 
 /**
+ * TODO: Not clearing characters when scrolling up
+*/
+
+/**
  * @brief      Holds information related to the current position of the cursor
  * 				on the screen
  */

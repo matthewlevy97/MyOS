@@ -4,7 +4,6 @@
 void paging_init(uint32_t paging_directory)
 {
 	uint32_t * ptr = paging_directory;
-	kprintf(KPRINT_DEBUG "Paging Directory: %d\n", paging_directory);
 
 	for(int i = 0; i < 1024; i++)
 		if(ptr[i]) kprintf(KPRINT_DEBUG "Paging Directory: %d %d\n", ptr[i] & 0xFFFFF000, i);
