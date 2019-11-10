@@ -7,12 +7,30 @@
 /*
 	Setup Stack
 */
-.section .bss
+.section .bootstrap_stack
 .align 16
 
 stack_bottom:
 .skip STACK_SIZE
 stack_top:
+
+/*
+	Setup Page Directory and Page Table 1 (For Kernel)
+*/
+.section .bss
+.align 4096
+
+page_directory:
+	.skip 4096
+
+/**
+	Page table entries:
+		0->1021 == kernel.bin
+		1022    == multiboot
+		1023    == VGA buffer
+*/
+page_table_1:
+	.skip 4096
 
 .section .text
 
@@ -22,14 +40,96 @@ stack_top:
 .global _start
 .type _start, @function
 
+/*
+	TODO: Code assumes kernel is less than 3MB. Need to update should it become larger
+*/
 _start:
+	movl $(page_table_1 - 0xC0000000), %edi
+	movl $0, %esi
+
+	/*
+		Map kernel, multiboot header, then VGA buffer
+	*/
+	movl $1022, %ecx
+
+1:
+	/* Only map the kernel here */
+	cmpl $(_kernel_start - 0xC0000000), %esi
+	jl 2f
+	cmpl $(_kernel_end - 0xC0000000), %esi
+	jge 3f
+
+	/*
+		Map physical address as "present, writable". Note that this maps
+		.text and .rodata as writable. Mind security and map them as non-writable.
+
+		TODO: Improve this security wise
+	*/
+	movl %esi, %edx
+	orl $0x003, %edx
+	movl %edx, (%edi)
+
+2:
+	addl $4096, %esi
+	addl $4, %edi
+	loop 1b /* Loop until ecx-- == 0 */
+
+3:
+	/* Map multiboot header as "present" to 0xC03FEXXX */
+	movl %ebx, %esi
+	andl $0xFFFFF000, %esi // Page align
+	orl $0x001, %esi       // Present bit
+	movl %esi, page_table_1 - 0xC0000000 + 1022 * 4
+	// Update ebx to new location
+	andl $0xFFF, %ebx
+	addl $0xC03FE000, %ebx
+
+	/* Map VGA buffer to 0xC03FF000 as "present, writable" */
+	movl $(0x000B8000 | 0x003), page_table_1 - 0xC0000000 + 1023 * 4
+
+	/*
+		The page table is used at both page directory entry 0 (virtually from 0x0
+		to 0x3FFFFF) (thus identity mapping the kernel) and page directory entry
+		768 (virtually from 0xC0000000 to 0xC03FFFFF) (thus mapping it in the
+		higher half). The kernel is identity mapped because enabling paging does
+		not change the next instruction, which continues to be physical. The CPU
+		would instead page fault if there was no identity mapping.
+
+		Map the page table to both virtual addresses 0x00000000 and 0xC0000000.
+	*/
+	movl $(page_table_1 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 0
+	movl $(page_table_1 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 768 * 4
+
+	/* Enable paging */
+	movl $(page_directory - 0xC0000000), %ecx
+	movl %ecx, %cr3
+
+	movl %cr0, %ecx
+	orl $0x80010000, %ecx
+	movl %ecx, %cr0
+
+	/* Jump to higher half */
+	lea 4f, %ecx
+	jmp *%ecx
+
+4:
+	/* Paging setup here (in higher half). Unmap identity mapping */
+	movl $0, page_directory + 0
+
+	/* TLB flush */
+	movl %cr3, %ecx
+	movl %ecx, %cr3
+
+	/* Setup stack */
 	mov $stack_top, %esp
 
+	/* Enter C land */
+	push $page_directory
 	push %eax   /* magic value */
 	push %ebx   /* multiboot struct addr */
 	call kinit
 
 	cli
-1:	hlt
-	jmp 1b
+5:	hlt
+	jmp 5b
 .size _start, . - _start

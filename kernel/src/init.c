@@ -12,7 +12,7 @@
 /**
  * @brief      Entry point into kernel for C code
  */
-void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
+void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic, uint32_t page_directory)
 {
 	// Initialization
 	kprint_init();
@@ -31,6 +31,9 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 		kprintf(KPRINT_DEBUG "Command Line: %s\n", cmdline->string);
 	}
 
+	kmalloc_init();
+	kprintf(KPRINT_DEBUG "KMalloc Initialized\n");
+	
 	pic_init();
 	kprintf(KPRINT_DEBUG "PIC Initialized\n");
 
@@ -39,9 +42,6 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	timer_init(50);
 	kprintf(KPRINT_DEBUG "PIT Initialized\n");
-
-	kmalloc_init();
-	kprintf(KPRINT_DEBUG "KMalloc Initialized\n");
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 

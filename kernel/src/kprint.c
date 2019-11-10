@@ -36,7 +36,7 @@ static        void screen_clear();
  */
 void kprint_init()
 {
-	VGA_BUFFER = (volatile uint16_t*)0xB8000;
+	VGA_BUFFER = (volatile uint16_t*)0xC03FF000;
 
 	screen.width  = 80;
 	screen.height = 25;
@@ -181,6 +181,9 @@ static inline int putint(const int i)
 	return putstring(buf);
 }
 
+/*
+ * TODO: Fix large numbers printing as negative hex
+*/
 static inline int puthex(const int i)
 {
 	char buf[12];

@@ -3,7 +3,7 @@
 kpanic_string:
 	.asciz "Kernel Panic!\n"
 kpanic_register_dump:
-	.asciz "EAX: %x  EBX: %x  ECX: %x  EDX: %x\nEDI: %x  ESI: %x  EBP: %x  ESP: %x\nEIP: %x\n"
+	.asciz "EAX: 0x%x  EBX: 0x%x  ECX: 0x%x  EDX: 0x%x\nEDI: 0x%x  ESI: 0x%x  EBP: 0x%x\n"
 kpanic_stack_dump:
 	.asciz "0x%x  "
 
@@ -42,7 +42,7 @@ kpanic:
 	*/
 	xor %edi, %edi
 	mov %esp, %esi
-.1:	
+1:	
 	push (%esi)
 	push $kpanic_stack_dump
 	call kprintf
@@ -51,9 +51,9 @@ kpanic:
 	inc %edi
 	dec %esi
 	cmp $64, %edi
-	jbe .1
+	jbe 1b
 
 	cli
-1:	hlt
-	jmp 1b
+2:	hlt
+	jmp 2b
 .size kpanic, . - kpanic
