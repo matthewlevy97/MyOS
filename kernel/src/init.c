@@ -1,12 +1,12 @@
 #include <macros.h>
 #include <kernel/kprint.h>
-#include <kernel/kmalloc.h>
 #include <kernel/kpanic.h>
 #include <kernel/multiboot.h>
 #include <kernel/serial.h>
 #include <kernel/timer.h>
 #include <kernel/i686/descriptor_tables.h>
 #include <kernel/i686/pic.h>
+#include <kernel/mm/kmalloc.h>
 
 /**
  * @brief      Entry point into kernel for C code

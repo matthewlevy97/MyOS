@@ -1,4 +1,4 @@
-#include <kernel/kmalloc.h>
+#include <kernel/mm/kmalloc.h>
 
 /**
  * Most basic kmalloc implementation currently
