@@ -50,10 +50,18 @@ src/i686/crtbegin.o src/i686/crtend.o:
 $(SYS_ROOT): install_headers
 
 run: install
-	qemu-system-i386 -cdrom $(KERNEL_ISO) -serial stdio -no-reboot
+	qemu-system-i386 -drive format=raw,media=cdrom,file=$(KERNEL_ISO) \
+	-m 128 \
+	-serial stdio \
+	-no-reboot
 
 debug: install
-	qemu-system-i386 -s -S -cdrom $(KERNEL_ISO) -serial stdio -d int,cpu_reset -no-reboot
+	qemu-system-i386 -drive format=raw,media=cdrom,file=$(KERNEL_ISO) \
+	-m 128 \
+	-serial stdio \
+	-s -S \
+	-d int,cpu_reset \
+	-no-reboot -no-shutdown
 
 install: install_headers install_kernel build
 
@@ -72,7 +80,7 @@ install_kernel: $(KERNEL_BIN)
 	@echo '\tboot'                            >> $(SYS_ROOT)/boot/grub/grub.cfg
 	@echo '}'                                 >> $(SYS_ROOT)/boot/grub/grub.cfg
 
-build:
+build: $(SYS_ROOT)
 	@grub-mkrescue -o $(KERNEL_ISO) $(SYS_ROOT)
 
 clean:
