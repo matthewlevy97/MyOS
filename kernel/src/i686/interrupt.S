@@ -46,26 +46,26 @@
 
 /**
 * ISR Numbers
-* 0  - Division by zero exception
-* 1  - Debug exception
-* 2  - Non maskable interrupt
-* 3  - Breakpoint exception
-* 4  - 'Into detected overflow'
-* 5  - Out of bounds exception
-* 6  - Invalid opcode exception
-* 7  - No coprocessor exception
-* 8  - Double fault (pushes an error code)
-* 9  - Coprocessor segment overrun
-* 10 - Bad TSS (pushes an error code)
-* 11 - Segment not present (pushes an error code)
-* 12 - Stack fault (pushes an error code)
-* 13 - General protection fault (pushes an error code)
-* 14 - Page fault (pushes an error code)
-* 15 - Unknown interrupt exception
-* 16 - Coprocessor fault
-* 17 - Alignment check exception (pushes an error code)
-* 18 - Machine check exception
-* 19-31 - Reserved (pushes an error code for 30)
+* ISR 0  - Division by zero exception
+* ISR 1  - Debug exception
+* ISR 2  - Non maskable interrupt
+* ISR 3  - Breakpoint exception
+* ISR 4  - 'Into detected overflow'
+* ISR 5  - Out of bounds exception
+* ISR 6  - Invalid opcode exception
+* ISR 7  - No coprocessor exception
+* ISR 8  - Double fault (pushes an error code)
+* ISR 9  - Coprocessor segment overrun
+* ISR 10 - Bad TSS (pushes an error code)
+* ISR 11 - Segment not present (pushes an error code)
+* ISR 12 - Stack fault (pushes an error code)
+* ISR 13 - General protection fault (pushes an error code)
+* ISR 14 - Page fault (pushes an error code)
+* ISR 15 - Unknown interrupt exception
+* ISR 16 - Coprocessor fault
+* ISR 17 - Alignment check exception (pushes an error code)
+* ISR 18 - Machine check exception
+* ISR 19-31 - Reserved (pushes an error code for 30)
 */
 
 ISR_NOERRCODE 0
@@ -103,22 +103,22 @@ ISR_NOERRCODE 31
 
 /*
 * IRQ Numbers
-* 0  - Programmable Interrupt Timer Interrupt
-* 1  - Keyboard Interrupt
-* 2  - Cascade (used internally by the two PICs. never raised)
-* 3  - COM2 (if enabled)
-* 4  - COM1 (if enabled)
-* 5  - LPT2 (if enabled)
-* 6  - Floppy Disk
-* 7  - LPT1 / Unreliable "spurious" interrupt (usually)
-* 8  - CMOS real-time clock (if enabled)
-* 9  - Free for peripherals / legacy SCSI / NIC
-* 10 - Free for peripherals / SCSI / NIC
-* 11 - Free for peripherals / SCSI / NIC
-* 12 - PS2 Mouse
-* 13 - FPU / Coprocessor / Inter-processor
-* 14 - Primary ATA Hard Disk
-* 15 - Secondary ATA Hard Disk
+* IRQ 0  - Programmable Interrupt Timer Interrupt
+* IRQ 1  - Keyboard Interrupt
+* IRQ 2  - Cascade (used internally by the two PICs. never raised)
+* IRQ 3  - COM2 (if enabled)
+* IRQ 4  - COM1 (if enabled)
+* IRQ 5  - LPT2 (if enabled)
+* IRQ 6  - Floppy Disk
+* IRQ 7  - LPT1 / Unreliable "spurious" interrupt (usually)
+* IRQ 8  - CMOS real-time clock (if enabled)
+* IRQ 9  - Free for peripherals / legacy SCSI / NIC
+* IRQ 10 - Free for peripherals / SCSI / NIC
+* IRQ 11 - Free for peripherals / SCSI / NIC
+* IRQ 12 - PS2 Mouse
+* IRQ 13 - FPU / Coprocessor / Inter-processor
+* IRQ 14 - Primary ATA Hard Disk
+* IRQ 15 - Secondary ATA Hard Disk
 */
 IRQ 0,  32
 IRQ 1,  33
