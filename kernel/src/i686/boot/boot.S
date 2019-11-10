@@ -97,7 +97,7 @@ _start:
 
 		Map the page table to both virtual addresses 0x00000000 and 0xC0000000.
 	*/
-	movl $(page_table_1 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 0
+	movl $(page_table_1 - 0xC0000000 + 0x003), page_directory - 0xC0000000
 	movl $(page_table_1 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 768 * 4
 
 	/* Enable paging */
@@ -114,7 +114,7 @@ _start:
 
 4:
 	/* Paging setup here (in higher half). Unmap identity mapping */
-	movl $0, page_directory + 0
+	movl $0, page_directory
 
 	/* TLB flush */
 	movl %cr3, %ecx

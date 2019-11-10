@@ -8,6 +8,7 @@
 #include <kernel/i686/descriptor_tables.h>
 #include <kernel/i686/pic.h>
 #include <kernel/mm/kmalloc.h>
+#include <kernel/mm/paging.h>
 
 /**
  * @brief      Entry point into kernel for C code
@@ -30,6 +31,8 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic, uint32_t page
 	if(cmdline) {
 		kprintf(KPRINT_DEBUG "Command Line: %s\n", cmdline->string);
 	}
+
+	paging_init(page_directory);
 
 	kmalloc_init();
 	kprintf(KPRINT_DEBUG "KMalloc Initialized\n");

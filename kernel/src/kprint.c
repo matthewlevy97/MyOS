@@ -224,7 +224,7 @@ static void screen_moveup()
 	uint16_t *current_line = (uint16_t*)(VGA_BUFFER);
 	uint16_t *next_line    = (uint16_t*)(current_line + screen.width);
 
-	while(counter--) {
+	while(--counter) {
 		memcpy(current_line, next_line, screen.width * sizeof(uint16_t));
 
 		current_line = next_line;
