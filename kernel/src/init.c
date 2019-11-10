@@ -28,7 +28,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	struct multiboot_tag_string *cmdline;
 	cmdline = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_CMDLINE);
 	if(cmdline) {
-		kprintf(KPRINT_DEBUG "Command Line: %s\n", boot_loader->string);
+		kprintf(KPRINT_DEBUG "Command Line: %s\n", cmdline->string);
 	}
 
 	pic_init();
