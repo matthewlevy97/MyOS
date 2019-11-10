@@ -1,10 +1,13 @@
 CC=i686-elf-gcc
 AS=i686-elf-as
 
+KERNEL_NAME=kernel
+
 KERNEL_INCLUDE_DIR=includes
 LINKER_SCRIPT=linker.ld
 SYS_ROOT=sysroot
-KERNEL_BIN=kernel.bin
+KERNEL_BIN=$(KERNEL_NAME).bin
+KERNEL_ISO=$(KERNEL_NAME).iso
 
 CFLAGS:=$(CFLAGS) --sysroot=$(SYS_ROOT) -isystem=/usr/include -I$(KERNEL_INCLUDE_DIR)
 CFLAGS:=$(CFLAGS) -O2 -g -std=gnu11 -ffreestanding -Wall -Wextra -nostdlib
@@ -25,7 +28,7 @@ $(KERNEL_OBJS)\
 $(LIBS)\
 $(KERNEL_ARCH_CRT_N_OBJS)
 
-.PHONY: all clean install install_headers install_kernel run debug
+.PHONY: all clean install install_headers install_kernel build run debug
 .SUFFIXES: .o .c .S
 
 all: $(KERNEL_BIN)
@@ -46,12 +49,12 @@ src/i686/crtbegin.o src/i686/crtend.o:
 $(SYS_ROOT): install_headers
 
 run: install
-	qemu-system-i386 -kernel $(SYS_ROOT)/boot/kernel.bin -serial stdio -no-reboot
+	qemu-system-i386 -cdrom $(KERNEL_ISO) -serial stdio -no-reboot
 
 debug: install
-	qemu-system-i386 -s -S -kernel $(SYS_ROOT)/boot/kernel.bin -serial stdio -d int,cpu_reset -no-reboot
+	qemu-system-i386 -s -S -cdrom $(KERNEL_ISO) -serial stdio -d int,cpu_reset -no-reboot
 
-install: install_headers install_kernel
+install: install_headers install_kernel build
 
 install_headers:
 	mkdir -p $(SYS_ROOT)/usr/lib
@@ -59,11 +62,20 @@ install_headers:
 	cp -R --preserve=timestamps $(KERNEL_INCLUDE_DIR)/. $(SYS_ROOT)/usr/include/kernel
 
 install_kernel: $(KERNEL_BIN)
-	mkdir -p $(SYS_ROOT)/boot
+	mkdir -p $(SYS_ROOT)/boot/grub
 	cp --preserve=timestamps $(KERNEL_BIN) $(SYS_ROOT)/boot
+	@echo 'set timeout=0'                    > $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo 'set default=0'                    >> $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo "menuentry '$(KERNEL_NAME)' {"     >> $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo "\tmultiboot2 /boot/$(KERNEL_BIN)" >> $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo '\tboot'                           >> $(SYS_ROOT)/boot/grub/grub.cfg
+	@echo '}'                                >> $(SYS_ROOT)/boot/grub/grub.cfg
+
+build:
+	@grub-mkrescue -o $(KERNEL_ISO) $(SYS_ROOT)
 
 clean:
-	rm -f $(KERNEL_BIN)
+	rm -f $(KERNEL_BIN) $(KERNEL_ISO)
 	rm -rf $(SYS_ROOT)
 	rm -f $(OBJS)
 	rm -f $(OBJS:.o=.d)

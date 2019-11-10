@@ -1,32 +1,15 @@
 /*
-	Multiboot Constants
-*/
-.set ALIGN,    1<<0             /* align loaded modules on page boundaries */
-.set MEMINFO,  1<<1             /* provide memory map */
-.set FLAGS,    ALIGN | MEMINFO  /* this is the Multiboot 'flag' field */
-.set MAGIC,    0x1BADB002       /* 'magic number' lets bootloader find the header */
-.set CHECKSUM, -(MAGIC + FLAGS) /* checksum of above, to prove we are multiboot */
-
-/*
 	General Constants
 */
 .set KB, 1024             /* 1kb */
-.set STACK_SIZE, 16*KB    /* 16 kb */
- 
-/* 
-	Multiboot Header
-*/
-.section .multiboot
-.align 4
-.long MAGIC
-.long FLAGS
-.long CHECKSUM
+.set STACK_SIZE, 32*KB    /* 32 kb */
 
 /*
 	Setup Stack
 */
 .section .bss
 .align 16
+
 stack_bottom:
 .skip STACK_SIZE
 stack_top:
@@ -42,6 +25,8 @@ stack_top:
 _start:
 	mov $stack_top, %esp
 
+	push %eax   /* magic value */
+	push %ebx   /* multiboot struct addr */
 	call kinit
 
 	cli
