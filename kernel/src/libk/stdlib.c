@@ -35,7 +35,7 @@ size_t itoa(char *buffer, size_t buffer_len, int value, size_t base)
 	}
 
 	// Is this a negative number?
-	if(value < 0) {
+	if(value < 0 && base == 10) {
 		negative = true;
 		value *= -1;
 	} else {
