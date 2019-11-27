@@ -1,6 +1,9 @@
 # TODO
 - Create driver template
 - Implement paging
+	- Get a page (physical)
+	- Map Physical page -> Virtual page
+	- Get Physical page from Virtual page
 - Implement heap storage
 	- kmalloc
 	- slab storage

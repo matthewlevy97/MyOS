@@ -1,15 +1,27 @@
 #include <kernel/mm/paging.h>
 #include <kernel/kprint.h>
 
-void paging_init(uint32_t paging_directory)
+/**
+ * Note:
+ * 	page_directory -> physical address of table table
+ * 	page table     -> physical address of mapped page
+ * 	
+ * 	page_directory recursively mapped to 0xFFFFF000
+*/
+
+static struct page_directory_entry *paging_directory = (struct page_directory_entry*)0xFFFFF000;
+
+void paging_init()
 {
-	uint32_t * ptr = paging_directory;
+	kprintf("0x%x\n", paging_directory);
+	kprintf("0x%x\n", paging_directory[768].address << 11);
+}
 
-	for(int i = 0; i < 1024; i++)
-		if(ptr[i]) kprintf(KPRINT_DEBUG "Paging Directory: %d %d\n", ptr[i] & 0xFFFFF000, i);
+uint32_t paging_virtual_to_physical(void *page_directory, void *virtual_address)
+{
+	return 0;
+}
 
-	// I'm cheating here and know 768 is populated with kernel data
-	ptr = ptr[768] + 0xC0000000;
-	for(int i = 0; i < 1024; i++)
-		if(ptr[i]) kprintf(KPRINT_DEBUG "Page Table: %x %d\n", ptr[i] & 0xFFFFF000, i);
+void paging_load_physical(void *page_directory, void *physical_address, void *virtual_address, uint32_t flags)
+{
 }

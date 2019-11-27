@@ -20,16 +20,16 @@ stack_top:
 .section .bss
 .align 4096
 
-page_directory:
+kernel_page_directory:
 	.skip 4096
 
 /**
-	Page table entries:
-		0->1021 == kernel.bin
-		1022    == multiboot
-		1023    == VGA buffer
+*	Page table entries:
+*		0->1021 == kernel.bin
+*		1022    == multiboot
+*		1023    == VGA buffer
 */
-page_table_1:
+_kernel_page_table:
 	.skip 4096
 
 .section .text
@@ -44,7 +44,7 @@ page_table_1:
 	TODO: Code assumes kernel is less than 3MB. Need to update should it become larger
 */
 _start:
-	movl $(page_table_1 - 0xC0000000), %edi
+	movl $(_kernel_page_table - 0xC0000000), %edi
 	movl $0, %esi
 
 	/*
@@ -70,6 +70,9 @@ _start:
 	movl %edx, (%edi)
 
 2:
+	/*
+		Move to next page
+	*/
 	addl $4096, %esi
 	addl $4, %edi
 	loop 1b /* Loop until ecx-- == 0 */
@@ -79,13 +82,13 @@ _start:
 	movl %ebx, %esi
 	andl $0xFFFFF000, %esi // Page align
 	orl $0x001, %esi       // Present bit
-	movl %esi, page_table_1 - 0xC0000000 + 1022 * 4
+	movl %esi, _kernel_page_table - 0xC0000000 + 1022 * 4
 	// Update ebx to new location
 	andl $0xFFF, %ebx
 	addl $0xC03FE000, %ebx
 
 	/* Map VGA buffer to 0xC03FF000 as "present, writable" */
-	movl $(0x000B8000 | 0x003), page_table_1 - 0xC0000000 + 1023 * 4
+	movl $(0x000B8000 | 0x003), _kernel_page_table - 0xC0000000 + 1023 * 4
 
 	/*
 		The page table is used at both page directory entry 0 (virtually from 0x0
@@ -94,14 +97,18 @@ _start:
 		higher half). The kernel is identity mapped because enabling paging does
 		not change the next instruction, which continues to be physical. The CPU
 		would instead page fault if there was no identity mapping.
-
-		Map the page table to both virtual addresses 0x00000000 and 0xC0000000.
 	*/
-	movl $(page_table_1 - 0xC0000000 + 0x003), page_directory - 0xC0000000
-	movl $(page_table_1 - 0xC0000000 + 0x003), page_directory - 0xC0000000 + 768 * 4
+	movl $(_kernel_page_table - 0xC0000000 + 0x003), kernel_page_directory - 0xC0000000
+	movl $(_kernel_page_table - 0xC0000000 + 0x003), kernel_page_directory - 0xC0000000 + 768 * 4
+
+	/*
+		Setup recursive mappings
+		Kernel Page Directory loaded at address: 0xFFC00000
+	*/
+	movl $(kernel_page_directory - 0xC0000000 + 0x003), kernel_page_directory - 0xC0000000 + 1023 * 4
 
 	/* Enable paging */
-	movl $(page_directory - 0xC0000000), %ecx
+	movl $(kernel_page_directory - 0xC0000000), %ecx
 	movl %ecx, %cr3
 
 	movl %cr0, %ecx
@@ -114,7 +121,7 @@ _start:
 
 4:
 	/* Paging setup here (in higher half). Unmap identity mapping */
-	movl $0, page_directory
+	movl $0, kernel_page_directory
 
 	/* TLB flush */
 	movl %cr3, %ecx
@@ -124,9 +131,8 @@ _start:
 	mov $stack_top, %esp
 
 	/* Enter C land */
-	push $page_directory
-	push %eax   /* magic value */
-	push %ebx   /* multiboot struct addr */
+	push %eax        /* magic value */
+	push %ebx        /* multiboot struct addr */
 	call kinit
 
 	cli

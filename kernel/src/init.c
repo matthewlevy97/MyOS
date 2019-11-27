@@ -13,7 +13,7 @@
 /**
  * @brief      Entry point into kernel for C code
  */
-void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic, uint32_t page_directory)
+void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 {
 	// Initialization
 	kprint_init();
@@ -26,13 +26,13 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic, uint32_t page
 		kpanic();
 	}
 	
-	struct multiboot_tag_string *cmdline;
-	cmdline = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_CMDLINE);
-	if(cmdline) {
-		kprintf(KPRINT_DEBUG "Command Line: %s\n", cmdline->string);
+	struct multiboot_tag_string *mb_cmdline;
+	mb_cmdline = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_CMDLINE);
+	if(mb_cmdline) {
+		kprintf(KPRINT_DEBUG "Command Line: %s\n", mb_cmdline->string);
 	}
 
-	paging_init(page_directory);
+	paging_init();
 
 	kmalloc_init();
 	kprintf(KPRINT_DEBUG "KMalloc Initialized\n");
