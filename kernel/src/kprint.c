@@ -234,6 +234,7 @@ static void screen_moveup()
 		current_line = next_line;
 		next_line    = (uint16_t*)(current_line + screen.width);
 	}
+	memset(current_line, 0, screen.width * sizeof(uint16_t));
 
 	screen.y_pos--;
 }
