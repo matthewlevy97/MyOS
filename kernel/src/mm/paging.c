@@ -17,11 +17,11 @@ void paging_init()
 	kprintf("0x%x\n", paging_directory[768].address << 11);
 }
 
-uint32_t paging_virtual_to_physical(void *page_directory, void *virtual_address)
+uint32_t paging_virtual_to_physical(void *virtual_address)
 {
 	return 0;
 }
 
-void paging_load_physical(void *page_directory, void *physical_address, void *virtual_address, uint32_t flags)
+void paging_load_physical(void *physical_address, void *virtual_address, uint32_t flags)
 {
 }

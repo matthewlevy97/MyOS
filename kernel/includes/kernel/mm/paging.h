@@ -46,5 +46,5 @@ struct page_table_entry {
 };
 
 void paging_init();
-uint32_t paging_virtual_to_physical(void *page_directory, void *virtual_address);
-void paging_load_physical(void *page_directory, void *physical_address, void *virtual_address, uint32_t flags);
+uint32_t paging_virtual_to_physical(void *virtual_address);
+void paging_load_physical(void *physical_address, void *virtual_address, uint32_t flags);
