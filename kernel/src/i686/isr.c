@@ -4,8 +4,9 @@
 #include <kernel/portio.h>
 #include <kernel/kprint.h>
 
-void isr_handler(uint8_t isr_number, uint8_t error_code)
+void isr_handler(struct isr_arguments args)
 {
+	uint32_t isr_number = args.interrupt_number;
 	if(isr_number >= IRQ0 && isr_number <= IRQ15) {
 		isr_number -= IRQ0;
 

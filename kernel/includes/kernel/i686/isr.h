@@ -4,4 +4,8 @@
 
 #define MAX_ISR_NUMBER 256
 
-void isr_handler(uint8_t isr_number, uint8_t error_code);
+struct isr_arguments {
+	uint32_t interrupt_number, error_code;
+};
+
+void isr_handler(struct isr_arguments args);
