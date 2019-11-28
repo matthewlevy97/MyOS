@@ -162,7 +162,10 @@ isr_common_stub:
 	// TODO: Determine what information I need to send to isr_handler
 	push %esi
 	push %edi
-	call isr_handler
+
+	mov $interrupt_handlers, %eax
+	mov (%eax, %edi, 4), %eax
+	call *%eax
 	add $8, %esp
 
 	pop %eax        // reload the original data segment descriptor

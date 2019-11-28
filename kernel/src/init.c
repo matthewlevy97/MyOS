@@ -33,7 +33,11 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 		kprintf(KPRINT_DEBUG "Command Line Arguments: %s\n", mb_cmdline->string);
 	}
 
+	isr_init();
+	kprintf(KPRINT_DEBUG "Installed default ISR handlers\n");
+
 	paging_init();
+	kprintf(KPRINT_DEBUG "Paging Initialized\n");
 
 	kmalloc_init(paging_virtual_to_physical(mb_header) + PAGE_SIZE);
 	kprintf(KPRINT_DEBUG "KMalloc Initialized\n");
