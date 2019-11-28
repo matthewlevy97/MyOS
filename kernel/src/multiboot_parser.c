@@ -27,7 +27,7 @@ void *multiboot_get_tag(void *mb_header, uint32_t tag_number)
 	total_size -= sizeof(uint32_t) * 2;
 	ptr += sizeof(uint32_t) * 2;
 
-	tag = ptr;
+	tag = (struct multiboot_tag*)ptr;
 	while(total_size && tag->type) {
 		if(tag->type == tag_number) break;
 
@@ -36,7 +36,7 @@ void *multiboot_get_tag(void *mb_header, uint32_t tag_number)
 		if(tag->size % MULTIBOOT_HEADER_ALIGN) {
 			ptr += 8 - (tag->size % MULTIBOOT_HEADER_ALIGN);
 		}
-		tag = ptr;
+		tag = (struct multiboot_tag*)ptr;
 	}
 
 	return (tag->type == tag_number ? tag : NULL);

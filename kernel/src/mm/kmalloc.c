@@ -34,7 +34,7 @@ void kmalloc_init(void * start_physical_address)
 	 * Map 4 MiB of pages starting after page of multiboot header as initial heap
 	 */
 	for(int i = 0; i < 1024; i++) {
-		paging_map((uint32_t)start_physical_address + i * PAGE_SIZE,
+		paging_map((void*)start_physical_address + i * PAGE_SIZE,
 			base_address + i * PAGE_SIZE,
 			PAGE_PRESENT | PAGE_READ_WRITE);
 	}
