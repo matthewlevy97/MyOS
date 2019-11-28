@@ -32,6 +32,9 @@ kernel_page_directory:
 _kernel_page_table:
 	.skip 4096
 
+_kernel_heap_page_table:
+	.skip 4096
+
 .section .text
 
 .extern kinit
@@ -100,6 +103,11 @@ _start:
 	*/
 	movl $(_kernel_page_table - 0xC0000000 + 0x003), kernel_page_directory - 0xC0000000
 	movl $(_kernel_page_table - 0xC0000000 + 0x003), kernel_page_directory - 0xC0000000 + 768 * 4
+
+	/*
+		Setup initial heap page table
+	*/
+	movl $(_kernel_heap_page_table - 0xC0000000 + 0x003), kernel_page_directory - 0xC0000000 + 770 * 4
 
 	/*
 		Setup recursive mappings

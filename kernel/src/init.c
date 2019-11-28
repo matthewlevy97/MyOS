@@ -9,6 +9,7 @@
 #include <kernel/i686/pic.h>
 #include <kernel/mm/kmalloc.h>
 #include <kernel/mm/paging.h>
+#include <kernel/string.h>
 
 /**
  * @brief      Entry point into kernel for C code
@@ -34,7 +35,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	paging_init();
 
-	kmalloc_init(4 * MB);
+	kmalloc_init(paging_virtual_to_physical(mb_header) + PAGE_SIZE);
 	kprintf(KPRINT_DEBUG "KMalloc Initialized\n");
 	
 	pic_init();
