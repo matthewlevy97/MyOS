@@ -1,4 +1,4 @@
-#include <kernel/multiboot_parser.h>
+#include <kernel/multiboot/multiboot_parser.h>
 #include <kernel/kpanic.h>
 #include <kernel/kprint.h>
 

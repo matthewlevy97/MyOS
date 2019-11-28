@@ -1,8 +1,6 @@
 #include <macros.h>
 #include <kernel/kprint.h>
 #include <kernel/kpanic.h>
-#include <kernel/multiboot2.h>
-#include <kernel/multiboot_parser.h>
 #include <kernel/serial.h>
 #include <kernel/timer.h>
 #include <kernel/i686/descriptor_tables.h>
@@ -10,6 +8,8 @@
 #include <kernel/i686/pic.h>
 #include <kernel/mm/kmalloc.h>
 #include <kernel/mm/paging.h>
+#include <kernel/multiboot/multiboot2.h>
+#include <kernel/multiboot/multiboot_parser.h>
 #include <kernel/string.h>
 
 /**

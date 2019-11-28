@@ -1,5 +1,5 @@
 #define ASM_FILE 1
-#include <kernel/multiboot2.h>
+#include <kernel/multiboot/multiboot2.h>
 
 .extern _start
 .type _start, @function
