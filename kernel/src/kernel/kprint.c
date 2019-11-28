@@ -1,5 +1,5 @@
-#include <kernel/kprint.h>
-#include <kernel/serial.h>
+#include <kprint.h>
+#include <serial.h>
 
 #include <stdarg.h>
 #include <string.h>

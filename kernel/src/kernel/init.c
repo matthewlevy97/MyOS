@@ -1,16 +1,15 @@
 #include <macros.h>
-#include <kernel/kprint.h>
-#include <kernel/kpanic.h>
-#include <kernel/serial.h>
-#include <kernel/timer.h>
-#include <kernel/i686/descriptor_tables.h>
-#include <kernel/i686/isr.h>
-#include <kernel/i686/pic.h>
-#include <kernel/mm/kmalloc.h>
-#include <kernel/mm/paging.h>
-#include <kernel/multiboot/multiboot2.h>
-#include <kernel/multiboot/multiboot_parser.h>
-#include <kernel/string.h>
+#include <kprint.h>
+#include <kpanic.h>
+#include <serial.h>
+#include <timer.h>
+#include <i686/descriptor_tables.h>
+#include <i686/isr.h>
+#include <i686/pic.h>
+#include <mm/kmalloc.h>
+#include <mm/paging.h>
+#include <multiboot/multiboot2.h>
+#include <multiboot/multiboot_parser.h>
 
 /**
  * @brief      Entry point into kernel for C code

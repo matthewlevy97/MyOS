@@ -1,7 +1,7 @@
-#include <kernel/mm/paging.h>
-#include <kernel/mm/kmalloc.h>
-#include <kernel/kpanic.h>
-#include <kernel/kprint.h>
+#include <mm/paging.h>
+#include <mm/kmalloc.h>
+#include <kpanic.h>
+#include <kprint.h>
 
 /**
  * Note:

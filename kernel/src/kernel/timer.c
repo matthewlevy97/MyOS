@@ -1,6 +1,6 @@
-#include <kernel/timer.h>
-#include <kernel/portio.h>
-#include <kernel/i686/pic.h>
+#include <timer.h>
+#include <portio.h>
+#include <i686/pic.h>
 
 /**
  * @brief      Initialize the PIT timer

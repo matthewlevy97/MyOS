@@ -1,5 +1,5 @@
-#include <kernel/serial.h>
-#include <kernel/portio.h>
+#include <serial.h>
+#include <portio.h>
 
 static int is_transmit_empty();
 

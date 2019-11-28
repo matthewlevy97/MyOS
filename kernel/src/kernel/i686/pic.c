@@ -1,7 +1,7 @@
-#include <kernel/i686/pic.h>
-#include <kernel/i686/descriptor_tables.h>
-#include <kernel/portio.h>
-#include <kernel/kprint.h>
+#include <i686/pic.h>
+#include <i686/descriptor_tables.h>
+#include <portio.h>
+#include <kprint.h>
 
 static void remap(uint16_t master_base, uint16_t slave_base);
 

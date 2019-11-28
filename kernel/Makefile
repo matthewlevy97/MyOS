@@ -3,14 +3,15 @@ AS=i686-elf-as
 
 KERNEL_NAME=kernel
 
-KERNEL_INCLUDE_DIR=includes
+KERNEL_INCLUDE_DIR=includes/kernel
+LIBK_INCLUDE_DIR=includes/libk
 LINKER_SCRIPT=linker.ld
 SYS_ROOT=sysroot
 KERNEL_BIN=$(KERNEL_NAME).bin
 KERNEL_ISO=$(KERNEL_NAME).iso
 MULTIBOOT_CMDLINE="serial"
 
-CFLAGS:=$(CFLAGS) --sysroot=$(SYS_ROOT) -isystem=/usr/include -I$(KERNEL_INCLUDE_DIR)
+CFLAGS:=$(CFLAGS) --sysroot=$(SYS_ROOT) -isystem=/usr/include -I$(KERNEL_INCLUDE_DIR) -I$(LIBK_INCLUDE_DIR)
 CFLAGS:=$(CFLAGS) -O2 -g -std=gnu11 -ffreestanding -Wall -Wextra -nostdlib
 LDFLAGS:=$(LDFLAGS)
 LIBS:=$(LIBS)
@@ -20,12 +21,14 @@ include src/make.config
 OBJS=\
 $(KERNEL_ARCH_CRT_I_OBJS)\
 $(KERNEL_OBJS)\
+$(LIBK_OBJS)\
 $(KERNEL_ARCH_CRT_N_OBJS)
 
 LINK_LIST=\
 $(LDFLAGS)\
 $(KERNEL_ARCH_CRT_I_OBJS)\
 $(KERNEL_OBJS)\
+$(LIBK_OBJS)\
 $(LIBS)\
 $(KERNEL_ARCH_CRT_N_OBJS)
 
@@ -38,7 +41,7 @@ $(KERNEL_BIN): $(SYS_ROOT) $(OBJS) $(LINKER_SCRIPT)
 	$(CC) -T $(LINKER_SCRIPT) -o $@ $(CFLAGS) $(LINK_LIST)
 
 # Probably a better way to resolve these, but this works so...
-src/i686/crtbegin.o src/i686/crtend.o:
+src/kernel/i686/crtbegin.o src/kernel/i686/crtend.o:
 	OBJ=`$(CC) $(CFLAGS) $(LDFLAGS) -print-file-name=$(@F)` && cp "$$OBJ" $@
 
 .c.o:
@@ -68,7 +71,9 @@ install: install_headers install_kernel build
 install_headers:
 	mkdir -p $(SYS_ROOT)/usr/lib
 	mkdir -p $(SYS_ROOT)/usr/include/kernel
+	mkdir -p $(SYS_ROOT)/usr/include/libk
 	cp -R --preserve=timestamps $(KERNEL_INCLUDE_DIR)/. $(SYS_ROOT)/usr/include/kernel
+	cp -R --preserve=timestamps $(LIBK_INCLUDE_DIR)/. $(SYS_ROOT)/usr/include/libk
 
 install_kernel: $(KERNEL_BIN)
 	mkdir -p $(SYS_ROOT)/boot/grub

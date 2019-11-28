@@ -1,6 +1,6 @@
-#include <kernel/mm/kmalloc.h>
-#include <kernel/mm/paging.h>
-#include <kernel/kprint.h>
+#include <mm/kmalloc.h>
+#include <mm/paging.h>
+#include <kprint.h>
 
 static uint8_t *base_address = (uint8_t*)0xC0800000;
 static const uint32_t eternal_size = 4 * MB;

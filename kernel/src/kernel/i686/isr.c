@@ -1,7 +1,7 @@
-#include <kernel/i686/isr.h>
-#include <kernel/i686/descriptor_tables.h>
-#include <kernel/i686/pic.h>
-#include <kernel/portio.h>
+#include <i686/isr.h>
+#include <i686/descriptor_tables.h>
+#include <i686/pic.h>
+#include <portio.h>
 
 void (*interrupt_handlers[MAX_ISR_NUMBER])(struct isr_arguments);
 

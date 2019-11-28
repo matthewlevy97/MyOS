@@ -1,5 +1,5 @@
-#include <kernel/i686/descriptor_tables.h>
-#include <kernel/i686/isr.h>
+#include <i686/descriptor_tables.h>
+#include <i686/isr.h>
 #include <string.h>
 
 extern void gdt_flush(uint32_t address);

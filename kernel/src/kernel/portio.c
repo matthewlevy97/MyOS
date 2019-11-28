@@ -1,4 +1,4 @@
-#include <kernel/portio.h>
+#include <portio.h>
 
 /*
  * Code from: https://wiki.osdev.org/Inline_Assembly/Examples

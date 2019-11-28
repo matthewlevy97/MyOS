@@ -1,6 +1,6 @@
-#include <kernel/multiboot/multiboot_parser.h>
-#include <kernel/kpanic.h>
-#include <kernel/kprint.h>
+#include <multiboot/multiboot_parser.h>
+#include <kpanic.h>
+#include <kprint.h>
 
 /**
  * @brief      Finds a tag in the multiboot header

@@ -1,6 +1,6 @@
 #include <assert.h>
-#include <kernel/kpanic.h>
-#include <kernel/kprint.h>
+#include <kpanic.h>
+#include <kprint.h>
 
 /**
  * @brief      Handle a failed assertion.
