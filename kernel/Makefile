@@ -13,6 +13,7 @@ MULTIBOOT_CMDLINE="serial"
 
 CFLAGS:=$(CFLAGS) --sysroot=$(SYS_ROOT) -isystem=/usr/include -I$(KERNEL_INCLUDE_DIR) -I$(LIBK_INCLUDE_DIR)
 CFLAGS:=$(CFLAGS) -O2 -g -std=gnu11 -ffreestanding -Wall -Wextra -nostdlib
+CFLAGS:=$(CFLAGS) -D__KERNEL_CODE
 LDFLAGS:=$(LDFLAGS)
 LIBS:=$(LIBS)
 

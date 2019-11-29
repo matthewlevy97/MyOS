@@ -77,3 +77,25 @@ size_t itoa(char *buffer, size_t buffer_len, int value, size_t base)
 
 	return digits;
 }
+
+void *malloc(size_t size)
+{
+	// TODO: 
+	return NULL;
+}
+void free(void *ptr)
+{
+	// TODO:
+	return;
+}
+void *calloc(size_t nmemb, size_t size)
+{
+	// TODO:
+	return NULL;
+}
+
+void *realloc(void *ptr, size_t size)
+{
+	// TODO:
+	return NULL;
+}

@@ -3,10 +3,14 @@
 - Implement paging
 	- Get an unused page (physical)
 	- Implement page fault handler
+- Implement palloc
+	- Create bitmap for page tracking
+	- Get total physical memory in system from multiboot
+	- Disqualify kernel pages, multiboot page, and initial heap init pages from bitmap
+	- Setup after kmalloc
 - Implement heap storage
 	- kmalloc
 	- slab storage
-	- eternal storage (Stuff that will NEVER be free'd)
 - Implement filesystem
 	- abstract code between low level and high level FS functionality
 
