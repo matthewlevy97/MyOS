@@ -1,5 +1,8 @@
 .section .text
 
+.extern interrupt_handlers
+.type interrupt_handlers, @object
+
 .extern isr_handler
 .type isr_handler, @function
 
@@ -14,6 +17,7 @@
 	.type isr\isr_number, @function
 
 	isr\isr_number:
+		cli
 		push $0
 		push $\isr_number
 		jmp isr_common_stub
@@ -25,6 +29,7 @@
 	.type isr\isr_number, @function
 
 	isr\isr_number:
+		cli
 		push $\isr_number
 		jmp isr_common_stub
 	.size isr\isr_number, . - isr\isr_number
@@ -38,6 +43,7 @@
 	.type irq\irq_number, @function
 
 	irq\irq_number:
+		cli
 		push $0
 		push $\isr_number
 		jmp isr_common_stub
@@ -156,17 +162,13 @@ isr_common_stub:
 
 	// Get the ISR number
 	mov 36(%esp), %edi
-	// Get the error code
-	mov 40(%esp), %esi
-
-	// TODO: Determine what information I need to send to isr_handler
-	push %esi
-	push %edi
-
 	mov $interrupt_handlers, %eax
 	mov (%eax, %edi, 4), %eax
+
+	cld
+	push %esp
 	call *%eax
-	add $8, %esp
+	add $4, %esp
 
 	pop %eax        // reload the original data segment descriptor
 	mov %ax, %ds

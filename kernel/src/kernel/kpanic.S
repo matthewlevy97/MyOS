@@ -19,6 +19,7 @@ kpanic:
 	pusha // Save registers for next part
 	push $kpanic_string
 	call kprintf
+	add $4, %esp
 	popa // Reload registers
 
 	/*
