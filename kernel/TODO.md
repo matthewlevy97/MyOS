@@ -7,7 +7,6 @@
 	- Implement page fault handler
 		- Create poison pages that will cause panic if hit (i.e. 0xCAFEBABE, 0xDEADBEEF, 0x00000)
 		- Lazy loading of non-present pages
-	- Wipe page contents on allocation
 - Implement palloc
 	- Get total physical memory in system from multiboot
 - Multiboot

@@ -2,6 +2,7 @@
 #include <mm/kmalloc.h>
 #include <kpanic.h>
 #include <kprint.h>
+#include <string.h>
 
 /**
  * Note:
@@ -48,7 +49,7 @@ void paging_map(void *physical_address, void *virtual_address, uint32_t flags)
 	pdindex = (uint32_t)virtual_address >> 22;
     ptindex = (uint32_t)virtual_address >> 12 & 0x03FF;
     
-    if((paging_directory[pdindex] & PAGE_PRESENT) == 0x00) {
+    if((paging_directory[pdindex]) == 0x00) {
     	// TODO: Create a new page table entry and update page directory
     	kprintf(KPRINT_DEBUG "Creating new page table\n");
     	
@@ -78,6 +79,11 @@ void paging_map(void *physical_address, void *virtual_address, uint32_t flags)
     pt_entry = flags & 0xFFF;
     pt_entry |= (uint32_t)physical_address; 
     pt[ptindex] = pt_entry;
+
+    /**
+     * Wipe page contents
+    */
+    memset(virtual_address, 0, PAGE_SIZE);
 
     /**
      * Need to flush TLB changes
