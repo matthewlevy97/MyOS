@@ -1,20 +1,33 @@
 # TODO
-- Create driver template
+- Create drivers
+	- Loadable through GRUB
+	- Loadable through FS
 - Implement paging
 	- Get an unused page (physical)
 	- Implement page fault handler
+		- Create poison pages that will cause panic if hit (i.e. 0xCAFEBABE, 0xDEADBEEF, 0x00000)
+		- Lazy loading of non-present pages
+	- Wipe page contents on allocation
 - Implement palloc
 	- Get total physical memory in system from multiboot
+- Multiboot
+	- Move information to heap, clear page
+	- Add function to multiboot_parser() to change the address of the multiboot information
 - Implement heap storage
 	- kmalloc
+		- kmalloc -> normal
+		- kmalloc_a -> kmalloc aligned
 	- slab storage
+		- look at Linux SLUB allocator
+	- expand heap size
 - Implement filesystem
-	- abstract code between low level and high level FS functionality
+	- abstract code between low level and high level FS functionality (VFS)
 - Errno for libk functions
 - Improve kpanic()
 	- Redo definition to kpanic(const char fmt[], ...)
 	- Have kpanic print file + line number of where it was called
-- Implement multitasking
+	- Improve debug output of kpanic ()
+- Implement kernel threads
 - Fix page permissions for kernel segments
 	- rodata is read-only
 	- text is executable
