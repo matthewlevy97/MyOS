@@ -23,6 +23,7 @@ struct terminal_screen_s {
 	uint16_t y_pos;
 
 	uint16_t serial_output;
+	uint16_t vga_output;
 };
 
 static volatile uint16_t       *VGA_BUFFER;
@@ -49,6 +50,7 @@ void kprint_init()
 	screen.y_pos  = 0;
 
 	screen.serial_output = 0;
+	screen.vga_output    = 1;
 
 	screen_clear();
 }
@@ -67,6 +69,22 @@ void enable_serial_output()
 void disable_serial_output()
 {
 	screen.serial_output = 0;
+}
+
+/**
+ * @brief      Enables output to VGA buffer
+ */
+void enable_vga_output()
+{
+	screen.vga_output = 1;
+}
+
+/**
+ * @brief      Disables output to VGA buffer
+ */
+void disable_vga_output()
+{
+	screen.vga_output = 0;
 }
 
 /**
@@ -145,28 +163,30 @@ static inline int putchar(const char c)
 		serial_write(c);
 	}
 
-	switch(c) {
-	case '\n':
-		screen.x_pos = 0;
-		screen.y_pos++;
-		break;
-	case '\r':
-		screen.x_pos = 0;
-		break;
-	default:
-		entry = ((uint16_t)c) | screen.color;
-		*(VGA_BUFFER + (screen.x_pos) + (screen.y_pos * screen.width)) = entry;
-		screen.x_pos++;
-	}
+	if(screen.vga_output) {
+		switch(c) {
+		case '\n':
+			screen.x_pos = 0;
+			screen.y_pos++;
+			break;
+		case '\r':
+			screen.x_pos = 0;
+			break;
+		default:
+			entry = ((uint16_t)c) | screen.color;
+			*(VGA_BUFFER + (screen.x_pos) + (screen.y_pos * screen.width)) = entry;
+			screen.x_pos++;
+		}
 
-	if(screen.x_pos >= screen.width) {
-		screen.x_pos = 0;
-		++screen.y_pos;
-	}
+		if(screen.x_pos >= screen.width) {
+			screen.x_pos = 0;
+			++screen.y_pos;
+		}
 
-	if(screen.y_pos >= screen.height) {
-		screen_moveup();
-		screen.x_pos = 0;
+		if(screen.y_pos >= screen.height) {
+			screen_moveup();
+			screen.x_pos = 0;
+		}
 	}
 
 	return 1;
