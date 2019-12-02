@@ -1,5 +1,6 @@
 #include <mm/kmalloc.h>
 #include <mm/paging.h>
+#include <mm/palloc.h>
 #include <string.h>
 
 static uint8_t * const heap_base_address = (uint8_t*)0xC0800000;
@@ -17,24 +18,22 @@ static uint8_t * const heap_base_address = (uint8_t*)0xC0800000;
  * these eternal pages, but cannot as palloc is not setup.
  * Therefore we cannot get a physical page to load.
  */
-uint32_t kmalloc_init(void * start_physical_address)
+void kmalloc_init()
 {
 	/**
 	 * Map 4 MiB of pages starting after page of multiboot header as initial heap
 	 */
-	for(int i = 0; i < 1024; i++) {
-		paging_map((void*)start_physical_address + i * PAGE_SIZE,
+	for(int i = 0; i < 3; i++) {
+		paging_map((void*)palloc_physical(),
 			heap_base_address + i * PAGE_SIZE,
 			PAGE_PRESENT | PAGE_READ_WRITE);
 	}
-	
-	return start_physical_address + 1024 * PAGE_SIZE;
 }
 
 void *kmalloc(size_t size)
 {
 	// TODO: Write an actual function here
-	static char *kmalloc_address = heap_base_address;
+	static uint8_t *kmalloc_address = heap_base_address;
 	void *ptr;
 
 	ptr = kmalloc_address;

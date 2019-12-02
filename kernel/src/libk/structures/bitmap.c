@@ -13,15 +13,23 @@
 #include <stdlib.h>
 #endif
 
-void *bitmap_create(size_t size)
+static inline size_t bitmap_determine_size(size_t size)
 {
 	size_t alloc_size;
-	alloc_size = size;
+
+	alloc_size = size / BITMAP_BITS_PER_INT;
 
 	if(size & BITMAP_BITS_PER_INT)
 		alloc_size++;
 
-	return calloc(alloc_size, sizeof(int));
+	return alloc_size;
+}
+
+void *bitmap_create(size_t size)
+{
+	size = bitmap_determine_size(size);
+
+	return calloc(size, sizeof(int));
 }
 
 char bitmap_get(void *bitmap, size_t size, size_t index)
