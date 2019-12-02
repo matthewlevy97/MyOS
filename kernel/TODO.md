@@ -3,12 +3,9 @@
 	- Loadable through GRUB
 	- Loadable through FS
 - Implement paging
-	- Get an unused page (physical)
 	- Implement page fault handler
 		- Create poison pages that will cause panic if hit (i.e. 0xCAFEBABE, 0xDEADBEEF, 0x00000)
 		- Lazy loading of non-present pages
-- Implement palloc
-	- Get total physical memory in system from multiboot
 - Multiboot
 	- Move information to heap, clear page
 	- Add function to multiboot_parser() to change the address of the multiboot information
@@ -31,3 +28,5 @@
 	- rodata is read-only
 	- text is executable
 	- etc
+- Remove hardcoded values in boot.S
+	- Use _kernel_offset from linker.ld instead of 0xC0000000
