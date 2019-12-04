@@ -34,7 +34,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	serial_init();
 	enable_serial_output();
 
-	// Multiboot parsing
+	// Multiboot validation
 	if(mb_magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
 		kprintf(KPRINT_ERROR "Not loaded with Multiboot 2!\n");
 		kpanic();
@@ -44,11 +44,11 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 		kpanic();
 	}
 
+	// Multiboot parsing
 	mb_cmdline = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_CMDLINE);
 	if(mb_cmdline) {
 		kprintf(KPRINT_DEBUG "Command Line Arguments: %s\n", mb_cmdline->string);
 	}
-
 	mb_mmap = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_MMAP);
 	if(!mb_mmap) {
 		kprintf(KPRINT_ERROR "Could not get memory map from multiboot header\n");
@@ -97,11 +97,22 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	// Enable interrupts
 	asm volatile ("sti");
+	
+	int *ptr = (int*)0xA0000000;
+   int do_page_fault = *ptr;
+   kprintf("A: %d\n", do_page_fault);
 
 	while(1);
 	__builtin_unreachable ();
 }
 
+/**
+ * @brief      Gets the start physical address for palloc to use from the multiboot memory map.
+ *
+ * @param      mb_mmap  The mememory map
+ *
+ * @return     The start address (page aligned) of the first physical page to use.
+ */
 static uint32_t get_palloc_start_address(struct multiboot_tag_mmap *mb_mmap)
 {
 	struct multiboot_mmap_entry mmap_entry;

@@ -5,7 +5,7 @@
 #define MAX_ISR_NUMBER 256
 
 struct isr_arguments {
-	uint32_t cr2, mxcsr;
+	uint32_t cr2, ds;
 	uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
 	uint32_t interrupt_number, error_code;
 	uint32_t eip, cs, eflags, useresp, ss; // Pushed by the processor automatically.

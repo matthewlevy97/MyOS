@@ -11,8 +11,7 @@
 	- Add function to multiboot_parser() to change the address of the multiboot information
 - Implement heap storage
 	- kmalloc
-		- kmalloc -> normal
-		- kmalloc_a -> kmalloc aligned
+		- combine neighboring free'd blocks
 	- slab storage
 		- look at Linux SLUB allocator
 	- expand heap size

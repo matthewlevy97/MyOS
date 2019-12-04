@@ -6,16 +6,25 @@
 
 void (*interrupt_handlers[MAX_ISR_NUMBER])(struct isr_arguments*);
 
+/**
+ * @brief      Initialize the interrupt handlers to the defaults below
+ */
 void isr_init()
 {
 	for(int i = 0; i < MAX_ISR_NUMBER; i++) {
 		if(i >= IRQ0 && i <= IRQ15)
 			interrupt_handlers[i] = default_irq_handler;
-		else
+		else 
 			interrupt_handlers[i] = default_isr_handler;
 	}
 }
 
+/**
+ * @brief      Installs a new interrupt service routine (ISR) handler
+ *
+ * @param[in]  interrupt_number  The interrupt number to attach to
+ * @param[in]  handler           The handler function to be called
+ */
 void install_interrupt_handler(uint8_t interrupt_number, void (*handler)(struct isr_arguments*))
 {
 	interrupt_handlers[interrupt_number] = handler;

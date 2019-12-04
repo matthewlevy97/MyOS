@@ -165,10 +165,14 @@ isr_common_stub:
 	mov $interrupt_handlers, %eax
 	mov (%eax, %edi, 4), %eax
 
+	// Push CR2
+	mov %cr2, %ecx
+	push %ecx
+
 	cld
 	push %esp
 	call *%eax
-	add $4, %esp
+	add $8, %esp // Cleanup ESP + CR2
 
 	pop %eax        // reload the original data segment descriptor
 	mov %ax, %ds
