@@ -6,9 +6,6 @@
 	- Implement page fault handler
 		- Create poison pages that will cause panic if hit (i.e. 0xCAFEBABE, 0xDEADBEEF, 0x00000)
 		- Lazy loading of non-present pages
-- Multiboot
-	- Move information to heap, clear page
-	- Add function to multiboot_parser() to change the address of the multiboot information
 - Implement heap storage
 	- kmalloc
 		- combine neighboring free'd blocks
