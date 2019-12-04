@@ -160,7 +160,6 @@ void palloc_mark_inuse(uint32_t address)
 	bitmap_set(allocated_pages_bitmap, bitmap_size, index);
 }
 
-// TODO: This code returns the wrong index
 static uint32_t find_index_by_address(uint32_t address)
 {
 	uint32_t index;

@@ -4,7 +4,7 @@
 
 /**
  * TODO: Alot of the functions in here could be improved by juggling
- * 	typed. ie. if memcpy length is divisible by uint16_t, use that instead
+ * 	types. ie. if memcpy length is divisible by uint16_t, use that instead
  * 	of uint8_t.
  */
 

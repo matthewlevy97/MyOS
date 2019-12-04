@@ -53,7 +53,7 @@ void paging_map(void *physical_address, void *virtual_address, uint32_t flags)
     ptindex = (uint32_t)virtual_address >> 12 & 0x03FF;
     
     if((paging_directory[pdindex]) == 0x00) {
-    	// TODO: Create a new page table entry and update page directory
+    	// Create a new page table entry and update page directory
     	kprintf(KPRINT_DEBUG "Creating new page table\n");
     	
     	pt = kmalloc_a(PAGE_SIZE, PAGE_SIZE);

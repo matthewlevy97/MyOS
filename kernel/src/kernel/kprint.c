@@ -6,10 +6,6 @@
 #include <stdlib.h>
 
 /**
- * TODO: Not clearing characters when scrolling up
-*/
-
-/**
  * @brief      Holds information related to the current position of the cursor
  * 				on the screen
  */
@@ -205,9 +201,6 @@ static inline int putint(const int i)
 	return putstring(buf);
 }
 
-/*
- * TODO: Fix large numbers printing as negative hex
-*/
 static inline int puthex(const int i)
 {
 	char buf[12];

@@ -3,17 +3,19 @@
 #include <i686/isr.h>
 #include <stddef.h>
 
+#ifdef MALLOC_USE_MAGIC
 #define MALLOC_MAGIC_KMALLOC      0xDEADBEEF
 #define MALLOC_MAGIC_EXPAND_HEAP  0xCAFEBABE
 #define MALLOC_MAGIC_FREE         0x12345678
 #define MALLOC_MAGIC_ALIGN_SPLIT  0xDEAFF00D
+#endif
 
 struct block_meta {
 	size_t size;
 	struct block_meta *next;
 	size_t free;
 #ifdef MALLOC_USE_MAGIC
-	size_t magic; // For debugging only. TODO: remove this in non-debug mode.
+	size_t magic; // For debugging only
 #endif
 };
 

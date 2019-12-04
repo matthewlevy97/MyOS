@@ -75,7 +75,10 @@ void kfree(void *ptr)
 void *kcalloc(size_t nmemb, size_t size)
 {
 	void *ptr;
-	// TODO: Check for overflow of nmemb * size
+	
+	// Overflow check
+	ASSERT(nmemb * size >= nmemb);
+
 	ptr = kmalloc(nmemb * size);
 	memset(ptr, 0, nmemb * size);
 
@@ -100,7 +103,7 @@ void *krealloc(void *ptr, size_t size)
 	// Then copy old data to new space.
 	new_ptr = kmalloc(size);
 	if (!new_ptr) {
-		return NULL; // TODO: set errno on failure.
+		return NULL;
 	}
 
 	memcpy(new_ptr, ptr, block_ptr->size);
