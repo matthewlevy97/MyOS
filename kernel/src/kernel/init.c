@@ -49,15 +49,15 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 		kprintf(KPRINT_DEBUG "Command Line Arguments: %s\n", mb_cmdline->string);
 	}
 
-	isr_init();
-	kprintf(KPRINT_DEBUG "Installed default ISR handlers\n");
-
 	mb_mmap = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_MMAP);
 	if(!mb_mmap) {
 		kprintf(KPRINT_ERROR "Could not get memory map from multiboot header\n");
 		kpanic();
 	}
 	palloc_init_address = get_palloc_start_address(mb_mmap);
+
+	isr_init();
+	kprintf(KPRINT_DEBUG "Installed default ISR handlers\n");
 
 	palloc_init(palloc_init_address);
 	kprintf(KPRINT_DEBUG "Page Allocator Initialized\n");
@@ -129,7 +129,6 @@ static uint32_t get_palloc_start_address(struct multiboot_tag_mmap *mb_mmap)
 				start_address = PAGE_ALIGN(kernel_end_address) + PAGE_SIZE;
 			else
 				start_address = PAGE_ALIGN(mmap_entry.addr);
-
 			break;
 		}
 	}

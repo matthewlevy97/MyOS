@@ -14,5 +14,9 @@
 void __assert(char *condition, char *file_name, size_t line_number)
 {
 	kprintf("Assertion Failed: %s in file %s on line %d\n\0", condition, file_name, line_number);
+#ifdef __KERNEL_CODE
 	kpanic();
+#else
+	// TODO:
+#endif
 }

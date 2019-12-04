@@ -19,6 +19,9 @@ typedef unsigned int   uint32_t;
 typedef unsigned int size_t;
 typedef signed int   ssize_t;
 
+typedef unsigned int uintptr_t;
+typedef signed int   intptr_t;
+
 typedef enum {
 	true  = 1,
 	false = 0

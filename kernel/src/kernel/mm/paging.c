@@ -53,7 +53,7 @@ void paging_map(void *physical_address, void *virtual_address, uint32_t flags)
     	// TODO: Create a new page table entry and update page directory
     	kprintf(KPRINT_DEBUG "Creating new page table\n");
     	
-    	pt = kmalloc_a(PAGE_SIZE);
+    	pt = kmalloc_a(PAGE_SIZE, PAGE_SIZE);
     	if(!pt) {
     		kprintf(KPRINT_ERROR "Failed to malloc region to create page table!\n");
     		kpanic();

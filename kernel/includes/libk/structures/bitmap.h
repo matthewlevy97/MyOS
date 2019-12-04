@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 void *bitmap_create(size_t size);
+void *bitmap_copy(void *dst, void *src, size_t dst_size);
 
 char bitmap_get(void *bitmap, size_t size, size_t index);
 size_t bitmap_get_first_clear(void *bitmap, size_t size);

@@ -73,6 +73,7 @@ void palloc_init2(uint32_t low_address, struct multiboot_tag_mmap *mb_mmap)
 
 	base_address = PAGE_ALIGN(low_address) + PAGE_SIZE;
 	allocated_pages_bitmap = bitmap_create(bitmap_size);
+	bitmap_copy(allocated_pages_bitmap, initial_palloc_bitmap, bitmap_size);
 
 	mmap_entries = kmalloc(sizeof(struct multiboot_mmap_entry) * number_mmap_entries);
 	if(mmap_entries == NULL) {

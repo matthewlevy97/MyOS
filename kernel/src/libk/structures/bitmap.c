@@ -1,4 +1,5 @@
 #include <structures/bitmap.h>
+#include <string.h>
 
 /**
  * Bitmap stores entries as arrays of integers.
@@ -32,10 +33,20 @@ void *bitmap_create(size_t size)
 	return calloc(size, sizeof(int));
 }
 
+void *bitmap_copy(void *dst, void *src, size_t dst_size)
+{
+	dst_size = bitmap_determine_size(dst_size);
+	memcpy(dst, src, dst_size);
+
+	return dst;
+}
+
 char bitmap_get(void *bitmap, size_t size, size_t index)
 {
 	int *map;
 	size_t element, bit;
+
+	size = bitmap_determine_size(size);
 
 	map = bitmap;
 	element = index / BITMAP_BITS_PER_INT;
@@ -52,6 +63,8 @@ size_t bitmap_get_first_clear(void *bitmap, size_t size)
 {
 	int *map;
 	size_t element, bit;
+
+	size = bitmap_determine_size(size);
 
 	map = bitmap;
 	for(element = 0; element < size && map[element] == -1; element++);
@@ -74,6 +87,8 @@ void *bitmap_set(void *bitmap, size_t size, size_t index)
 	int *map;
 	size_t element, bit;
 
+	size = bitmap_determine_size(size);
+
 	map = bitmap;
 	element = index / BITMAP_BITS_PER_INT;
 	bit = BITMAP_BITS_PER_INT - (index & BITMAP_BITS_PER_INT);
@@ -91,6 +106,8 @@ void *bitmap_clear(void *bitmap, size_t size, size_t index)
 {
 	int *map;
 	size_t element, bit;
+
+	size = bitmap_determine_size(size);
 
 	map = bitmap;
 	element = index / BITMAP_BITS_PER_INT;
