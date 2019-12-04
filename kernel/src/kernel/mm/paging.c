@@ -1,5 +1,7 @@
-#include <mm/paging.h>
+#include <i686/isr.h>
 #include <mm/kmalloc.h>
+#include <mm/palloc.h>
+#include <mm/paging.h>
 #include <kpanic.h>
 #include <kprint.h>
 #include <string.h>
@@ -17,6 +19,7 @@ static uint32_t *paging_directory = (uint32_t*)0xFFFFF000;
 void paging_init()
 {
 	kprintf(KPRINT_DEBUG "Paging Directory Address: 0x%x\n", paging_directory);
+    install_interrupt_handler(14, page_fault_handler);
 }
 
 void * paging_virtual_to_physical(void *virtual_address)
@@ -87,6 +90,7 @@ void paging_map(void *physical_address, void *virtual_address, uint32_t flags)
 
     /**
      * Need to flush TLB changes
+     * XXX: Is this needed actually?
      */
     paging_switch_directory(paging_directory, 0);
 }
@@ -97,4 +101,43 @@ void paging_switch_directory(uint32_t * page_dir, uint32_t phys)
         page_dir = paging_virtual_to_physical(page_dir);
 
     asm volatile("mov %0, %%cr3" :: "r"((uint32_t)page_dir));
+}
+
+void page_fault_handler(struct isr_arguments *args)
+{
+    // Does page exist, but not present?
+    if(args->error_code & 0x1) {
+        // Page protection violation
+        kprintf("Need to make present\n");
+    }
+
+    if(args->error_code & 0x2) {
+        // Write access
+        kprintf("WRITE\n");
+    } else {
+        // Read access
+        uint32_t addr;
+        // TODO: Determine which permissions/flags to set for the page
+        addr = palloc_physical();
+        paging_map((void*)addr,
+            (void*)(args->cr2),
+            PAGE_PRESENT | PAGE_READ_WRITE);
+    }
+
+    if(args->error_code & 0x4) {
+        // When set, the page fault was caused while CPL = 3.
+        // This does not necessarily mean that the page fault was a privilege violation.
+        kprintf("PRIV VIOLATE\n");
+    }
+
+    if(args->error_code & 0x8) {
+        // Reserved bit set to 1. Should never happen
+        kprintf(KPRINT_ERROR "Reserved bit set on page!\n");
+    }
+
+    if(args->error_code & 0x10) {
+        // Instruction fetch from NX-page
+        kprintf("NX\n");
+    }
+    kprintf("DONE\n");
 }

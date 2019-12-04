@@ -7,5 +7,8 @@
 
 void palloc_init(uint32_t low_address);
 void palloc_init2(uint32_t low_address, struct multiboot_tag_mmap *mb_mmap);
+
 uint32_t palloc_physical();
 void palloc_release(uint32_t address);
+
+void palloc_mark_inuse(uint32_t address);

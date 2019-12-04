@@ -27,3 +27,5 @@ void paging_init();
 void * paging_virtual_to_physical(void *virtual_address);
 void paging_map(void *physical_address, void *virtual_address, uint32_t flags);
 void paging_switch_directory(uint32_t * page_dir, uint32_t phys);
+
+void page_fault_handler(struct isr_arguments *args);

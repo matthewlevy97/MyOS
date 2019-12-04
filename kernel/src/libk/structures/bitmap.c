@@ -61,8 +61,8 @@ char bitmap_get(void *bitmap, size_t size, size_t index)
 
 size_t bitmap_get_first_clear(void *bitmap, size_t size)
 {
-	int *map;
-	size_t element, bit;
+	int *map, bit;
+	size_t element;
 
 	size = bitmap_determine_size(size);
 
@@ -73,9 +73,9 @@ size_t bitmap_get_first_clear(void *bitmap, size_t size)
 	if(element >= size) goto fail;
 	
 	// There is an empty bit in this entry
-	for(bit = BITMAP_BITS_PER_INT; bit; bit--) {
-		if(((map[element] >> bit) & 0x1) == 0x00)
-			return element * BITMAP_BITS_PER_INT + (BITMAP_BITS_PER_INT - bit);
+	for(bit = BITMAP_BITS_PER_INT; bit >= 0; bit--) {
+		if(((map[element] >> bit) & 0x1) == 0)
+			return (element * BITMAP_BITS_PER_INT) + (BITMAP_BITS_PER_INT - bit);
 	}
 	
 fail:

@@ -49,6 +49,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	if(mb_cmdline) {
 		kprintf(KPRINT_DEBUG "Command Line Arguments: %s\n", mb_cmdline->string);
 	}
+
 	mb_mmap = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_MMAP);
 	if(!mb_mmap) {
 		kprintf(KPRINT_ERROR "Could not get memory map from multiboot header\n");
@@ -61,18 +62,14 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	palloc_init(palloc_init_address);
 	kprintf(KPRINT_DEBUG "Page Allocator Initialized\n");
+	// Mark multiboot header (page) in use
+	palloc_mark_inuse(PAGE_ALIGN((uint32_t)paging_virtual_to_physical(mb_header)));
 
 	paging_init();
 	kprintf(KPRINT_DEBUG "Paging Initialized\n");
 
 	kmalloc_init();
 	kprintf(KPRINT_DEBUG "KMalloc Initialized\n");
-
-	/**
-	 * Stage 2 copies and loads information from the memory map into the heap
-	 */
-	palloc_init2(palloc_init_address, mb_mmap);
-	kprintf(KPRINT_DEBUG "Page Allocator (Stage 2) Initialized\n");
 
 	// Migrate multiboot header to heap
 	tmp_mb_header = kmalloc(*(uint32_t*)mb_header);
@@ -82,7 +79,24 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	}
 	kprintf(KPRINT_DEBUG "Moving multiboot header from 0x%x to 0x%x\n", mb_header, tmp_mb_header);
 	memcpy(tmp_mb_header, mb_header, *(uint32_t*)mb_header);
+
+	// Release mark on multiboot header page
+	palloc_release(PAGE_ALIGN((uint32_t)paging_virtual_to_physical(mb_header)));
 	mb_header = tmp_mb_header;
+
+	// Need to update location of mb_mmap now that multiboot header has been moved
+	mb_mmap = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_MMAP);
+	if(!mb_mmap) {
+		kprintf(KPRINT_ERROR "Could not get memory map from multiboot header\n");
+		kpanic();
+	}
+	palloc_init_address = get_palloc_start_address(mb_mmap);
+
+	/**
+	 * Stage 2 copies and loads information from the memory map into the heap
+	 */
+	palloc_init2(palloc_init_address, mb_mmap);
+	kprintf(KPRINT_DEBUG "Page Allocator (Stage 2) Initialized\n");
 
 	pic_init();
 	kprintf(KPRINT_DEBUG "PIC Initialized\n");
@@ -97,10 +111,6 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	// Enable interrupts
 	asm volatile ("sti");
-	
-	int *ptr = (int*)0xA0000000;
-   int do_page_fault = *ptr;
-   kprintf("A: %d\n", do_page_fault);
 
 	while(1);
 	__builtin_unreachable ();

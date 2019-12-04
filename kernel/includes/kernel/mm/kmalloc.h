@@ -1,5 +1,6 @@
 #pragma once
 
+#include <i686/isr.h>
 #include <stddef.h>
 
 #define MALLOC_MAGIC_KMALLOC      0xDEADBEEF

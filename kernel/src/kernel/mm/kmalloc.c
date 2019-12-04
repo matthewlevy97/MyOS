@@ -3,7 +3,7 @@
 #include <mm/palloc.h>
 #include <assert.h>
 #include <string.h>
-
+#include <kpanic.h>
 #include <kprint.h>
 
 static uint8_t * const heap_base_address = (uint8_t*)0xC0800000;
@@ -12,26 +12,20 @@ static uint8_t *       heap_top_address;
 static void *kmalloc_implementation(size_t size, size_t alignment);
 static struct block_meta *find_free_block(struct block_meta **last, size_t size, size_t alignment);
 static struct block_meta *expand_heap(struct block_meta* last, size_t size, size_t alignment);
+
 static inline size_t can_split_align(struct block_meta *block, size_t size, size_t alignment);
 static inline struct block_meta *ptr_to_block(void *ptr);
+static inline void map_heap_page();
 
 /**
  * @brief      Initialize kmalloc and allocated the first few pages
  */
 void kmalloc_init()
 {
-	uintptr_t heap_page_number;
-
-	/**
-	 * Map 4 MiB of pages starting after page of multiboot header as initial heap
-	 */
-	for(heap_page_number = 0; heap_page_number < 10; heap_page_number++) {
-		paging_map((void*)palloc_physical(),
-			heap_base_address + heap_page_number * PAGE_SIZE,
-			PAGE_PRESENT | PAGE_READ_WRITE);
+	heap_top_address = heap_base_address;
+	for(int i = 0; i < PAGE_DIRECTORY_ENTRIES; i++) {
+		map_heap_page();
 	}
-	
-	heap_top_address = heap_base_address + heap_page_number * PAGE_SIZE;
 }
 
 /**
@@ -70,7 +64,6 @@ void kfree(void *ptr)
 	block_ptr = ptr_to_block(ptr);
 	ASSERT(block_ptr->free == 0);
 #ifdef MALLOC_USE_MAGIC
-	kprintf("0x%x\t0x%x\t0x%x\n", block_ptr, block_ptr->magic, block_ptr->size);
 	ASSERT(block_ptr->magic == MALLOC_MAGIC_KMALLOC ||
 		block_ptr->magic == MALLOC_MAGIC_EXPAND_HEAP ||
 		block_ptr->magic == MALLOC_MAGIC_ALIGN_SPLIT);
@@ -152,8 +145,6 @@ static void *kmalloc_implementation(size_t size, size_t alignment)
 		block->magic = MALLOC_MAGIC_KMALLOC;
 #endif
 	}
-	
-	ASSERT((uintptr_t)heap_top_address >= (uintptr_t)block + block->size);
 
 	return ++block;
 }
@@ -183,6 +174,11 @@ static struct block_meta *expand_heap(struct block_meta* last, size_t size, size
 
 	// Append block to previous
 	last->next = block;
+
+	if((uintptr_t)block + size >= (uintptr_t)heap_top_address) {
+		kprintf(KPRINT_ERROR "Out of heap memory\n");
+		kpanic();
+	}
 	
 	// Is this block aligned correctly?
 	if(((uintptr_t)block & (alignment - 1)) == 0x00) {
@@ -233,4 +229,13 @@ static inline size_t can_split_align(struct block_meta *block, size_t size, size
 static inline struct block_meta *ptr_to_block(void *ptr)
 {
 	return (struct block_meta*)ptr - 1;
+}
+
+static inline void map_heap_page()
+{
+	paging_map((void*)palloc_physical(),
+		heap_top_address,
+		PAGE_PRESENT | PAGE_READ_WRITE);
+
+	heap_top_address += PAGE_SIZE;
 }

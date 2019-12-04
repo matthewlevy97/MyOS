@@ -17,6 +17,8 @@ static uint32_t bitmap_size;
 
 static uint32_t base_address;
 
+static uint32_t find_index_by_address(uint32_t address);
+
 /**
  * @brief      Stage 1 initialization, sets-up palloc w/ a small number of pages
  *
@@ -140,20 +142,46 @@ success:
 void palloc_release(uint32_t address)
 {
 	uint32_t index;
+	index = find_index_by_address(address);
+	
+	bitmap_clear(allocated_pages_bitmap, bitmap_size, index);
+}
+
+/**
+ * @brief      Mark a page as in use / possession gained not through palloc_physical()
+ *
+ * @param[in]  address  The physical page address
+ */
+void palloc_mark_inuse(uint32_t address)
+{
+	uint32_t index;
+	index = find_index_by_address(address);
+	
+	bitmap_set(allocated_pages_bitmap, bitmap_size, index);
+}
+
+// TODO: This code returns the wrong index
+static uint32_t find_index_by_address(uint32_t address)
+{
+	uint32_t index;
 
 	index = 0;
+
+	if(number_mmap_entries == 0) {
+		index = (address - base_address) / PAGE_SIZE;
+		goto return_index;
+	}
+
+	// TODO: Verify this works
 	for(uint32_t i = 0; i < number_mmap_entries; i++) {
 		if(mmap_entries[i].type != MULTIBOOT_MEMORY_AVAILABLE || mmap_entries[i].addr + mmap_entries[i].len < base_address)
 			continue;
 
-		if(index > mmap_entries[i].len / PAGE_SIZE) {
+		if(address >= mmap_entries[i].len) {
 			index += mmap_entries[i].len / PAGE_SIZE;
-		} else {
-			address -= mmap_entries[i].addr;
-			break;
 		}
 	}
-	index += address / PAGE_SIZE;
-	
-	bitmap_clear(allocated_pages_bitmap, bitmap_size, index);
+
+return_index:
+	return index;
 }
