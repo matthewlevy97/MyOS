@@ -58,14 +58,12 @@ void paging_map(void *physical_address, void *virtual_address, uint32_t flags)
     	
     	pt = kmalloc_a(PAGE_SIZE, PAGE_SIZE);
     	if(!pt) {
-    		kprintf(KPRINT_ERROR "Failed to malloc region to create page table!\n");
-    		kpanic();
+    		kpanic("Failed to malloc region to create page table!");
     	}
     	
     	pt = paging_virtual_to_physical(pt);
     	if(!pt) {
-    		kprintf(KPRINT_ERROR "Failed to get physical address of new page table\n");
-    		kpanic();
+    		kpanic("Failed to get physical address of new page table");
     	}
 
     	paging_directory[pdindex] = ((uint32_t)pt & ~0xFFF) | PAGE_PRESENT | PAGE_READ_WRITE;
@@ -139,5 +137,4 @@ void page_fault_handler(struct isr_arguments *args)
         // Instruction fetch from NX-page
         kprintf("NX\n");
     }
-    kprintf("DONE\n");
 }

@@ -5,7 +5,6 @@
 
 #include <string.h>
 #include <kpanic.h>
-#include <kprint.h>
 
 static uint32_t initial_palloc_bitmap[PALLOC_INITIAL_BITMAP_SIZE];
 
@@ -79,8 +78,7 @@ void palloc_init2(uint32_t low_address, struct multiboot_tag_mmap *mb_mmap)
 
 	mmap_entries = kmalloc(sizeof(struct multiboot_mmap_entry) * number_mmap_entries);
 	if(mmap_entries == NULL) {
-		kprintf(KPRINT_ERROR "Could not allocate space for memory map\n");
-		kpanic();
+		kpanic("Could not allocate space for memory map");
 	}
 
 	memcpy(mmap_entries, mb_mmap->entries, sizeof(struct multiboot_mmap_entry) * number_mmap_entries);

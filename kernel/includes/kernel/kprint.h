@@ -19,6 +19,8 @@ void disable_serial_output();
 void enable_vga_output();
 void disable_vga_output();
 
+void dump_hex(int *hex_bytes, uint32_t number_of_bytes);
+
 int kprintf(const char *format, ...);
 int ksprintf(char *str, const char *format, ...);
 int ksnprintf(char *str, size_t size, const char *format, ...);

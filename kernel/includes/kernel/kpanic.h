@@ -1,3 +1,3 @@
 #pragma once
 
-void kpanic();
+void kpanic(const char *message);

@@ -11,7 +11,7 @@
 .align 16
 
 stack_bottom:
-.skip STACK_SIZE
+	.skip STACK_SIZE
 stack_top:
 
 /*
@@ -137,6 +137,7 @@ _start:
 
 	/* Setup stack */
 	mov $stack_top, %esp
+	xor %ebp, %ebp
 
 	/* Enter C land */
 	push %eax        /* magic value */

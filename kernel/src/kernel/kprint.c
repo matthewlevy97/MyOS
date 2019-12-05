@@ -84,6 +84,26 @@ void disable_vga_output()
 }
 
 /**
+ * @brief      Dumps a hex string. Mostly used for stack dumping
+ *
+ * @param      hex_bytes        The string of bytes to print in hex
+ * @param[in]  number_of_bytes  The number of bytes to display
+ */
+void dump_hex(int *hex_bytes, uint32_t number_of_bytes)
+{
+	kprintf("0x%x: ", hex_bytes);
+
+	for(uint32_t i = 0; i < number_of_bytes; i++) {
+		putstring("0x");
+		puthex(*hex_bytes++);
+		putchar(' ');
+
+		if((number_of_bytes / 2 - 1) == i) putchar('\t');
+	}
+	putchar('\n');
+}
+
+/**
  * @brief      Print format string to the screen
  *
  * @param[in]  format     Format string
@@ -205,13 +225,23 @@ static inline int puthex(const int i)
 {
 	char buf[12];
 	size_t bytes_written;
+	int shift;
 
 	bytes_written = itoa(buf, sizeof(buf), i, 16);
 	if(!bytes_written) {
 		return 0;
 	}
 
-	return putstring(buf);
+	// pad hex to 32-bit
+	shift = 9 - bytes_written;
+	for(int i = shift; i-- > 0;) {
+		putchar('0');
+	}
+
+	if(shift >= 0)
+		return shift + putstring(buf);
+	else
+		return putstring(buf);
 }
 
 static inline int putstring(const char *str)

@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <string.h>
 #include <kpanic.h>
-#include <kprint.h>
 
 static uint8_t * const heap_base_address = (uint8_t*)0xC0800000;
 static uint8_t *       heap_top_address;
@@ -179,8 +178,7 @@ static struct block_meta *expand_heap(struct block_meta* last, size_t size, size
 	last->next = block;
 
 	if((uintptr_t)block + size >= (uintptr_t)heap_top_address) {
-		kprintf(KPRINT_ERROR "Out of heap memory\n");
-		kpanic();
+		kpanic("Out of heap memory");
 	}
 	
 	// Is this block aligned correctly?

@@ -1,57 +1,41 @@
 .section .rodata
 
 kpanic_string:
-	.asciz "Kernel Panic!\n"
-kpanic_register_dump:
-	.asciz "EAX: 0x%x  EBX: 0x%x  ECX: 0x%x  EDX: 0x%x\nEDI: 0x%x  ESI: 0x%x  EBP: 0x%x\n"
-kpanic_stack_dump:
-	.asciz "0x%x  "
+	.asciz "--- snip ---\nKernel Panic:\n\tAddress: 0x%x\n\tMessage: %s\n"
+kpanic_stack_trace:
+	.asciz "Stack Trace:\n"
 
 .section .text
 
 .extern kprintf
 .type kprintf, @function
 
+.extern dump_hex
+.type dump_hex, @function
+
 .global kpanic
 .type kpanic, @function
 
 kpanic:
-	pusha // Save registers for next part
+	// Display error message
 	push $kpanic_string
 	call kprintf
-	add $4, %esp
-	popa // Reload registers
-
-	/*
-	Dump Registers
-	*/
-	push %ebp
-	push %esi
-	push %edi
-	push %edx
-	push %ecx
-	push %ebx
-	push %eax
-	push $kpanic_register_dump
-	call kprintf
-	add $32, %esp
+	add $8, %esp
 
 	/*
 	Stack Dump
-
-	kpanic_stack_dump prints 8 hex values
 	*/
 	xor %edi, %edi
 	mov %esp, %esi
 1:	
-	push (%esi)
-	push $kpanic_stack_dump
-	call kprintf
+	push $8 // Print 8 hex per line
+	push %esi
+	call dump_hex
 	add $8, %esp
 
 	inc %edi
-	dec %esi
-	cmp $64, %edi
+	sub $32, %esi // Move to next 4 integers
+	cmp $10, %edi // Only print 4 lines
 	jbe 1b
 
 	cli

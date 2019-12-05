@@ -20,8 +20,7 @@ void *multiboot_get_tag(void *mb_header, uint32_t tag_number)
 
 	total_size = *(uint32_t*)ptr;
 	if(((uint32_t*)ptr)[1] != 0x00 || total_size < sizeof(struct multiboot_tag)) {
-		kprintf(KPRINT_ERROR "Invalid multiboot header\n");
-		kpanic();
+		kpanic("Invalid multiboot header");
 	}
 
 	total_size -= sizeof(uint32_t) * 2;

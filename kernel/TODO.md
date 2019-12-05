@@ -16,9 +16,7 @@
 	- abstract code between low level and high level FS functionality (VFS)
 - Errno for libk functions
 - Improve kpanic()
-	- Redo definition to kpanic(const char fmt[], ...)
-	- Have kpanic print file + line number of where it was called
-	- Improve debug output of kpanic ()
+	- Dump registers when calling kpanic
 - Implement kernel threads
 - Fix page permissions for kernel segments
 	- rodata is read-only

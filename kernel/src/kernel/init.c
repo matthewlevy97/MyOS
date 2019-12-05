@@ -36,12 +36,10 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	// Multiboot validation
 	if(mb_magic != MULTIBOOT2_BOOTLOADER_MAGIC) {
-		kprintf(KPRINT_ERROR "Not loaded with Multiboot 2!\n");
-		kpanic();
+		kpanic("Not loaded with Multiboot 2!");
 	}
 	if(((uint32_t)mb_header) & 7) {
-		kprintf(KPRINT_ERROR "Unaligned multiboot information!\n");
-		kpanic();
+		kpanic("Unaligned multiboot information!");
 	}
 
 	// Multiboot parsing
@@ -52,8 +50,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	mb_mmap = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_MMAP);
 	if(!mb_mmap) {
-		kprintf(KPRINT_ERROR "Could not get memory map from multiboot header\n");
-		kpanic();
+		kpanic("Could not get memory map from multiboot header");
 	}
 	palloc_init_address = get_palloc_start_address(mb_mmap);
 
@@ -74,8 +71,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	// Migrate multiboot header to heap
 	tmp_mb_header = kmalloc(*(uint32_t*)mb_header);
 	if(!tmp_mb_header) {
-		kprintf(KPRINT_ERROR "Unable to allocate space in heap for multiboot header\n");
-		kpanic();
+		kpanic("Unable to allocate space in heap for multiboot header");
 	}
 	kprintf(KPRINT_DEBUG "Moving multiboot header from 0x%x to 0x%x\n", mb_header, tmp_mb_header);
 	memcpy(tmp_mb_header, mb_header, *(uint32_t*)mb_header);
@@ -87,8 +83,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	// Need to update location of mb_mmap now that multiboot header has been moved
 	mb_mmap = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_MMAP);
 	if(!mb_mmap) {
-		kprintf(KPRINT_ERROR "Could not get memory map from multiboot header\n");
-		kpanic();
+		kpanic("Could not get memory map from multiboot header");
 	}
 	palloc_init_address = get_palloc_start_address(mb_mmap);
 
@@ -155,8 +150,7 @@ static uint32_t get_palloc_start_address(struct multiboot_tag_mmap *mb_mmap)
 	}
 
 	if(start_address == 0) {
-		kprintf(KPRINT_ERROR "Unable to determine a base address for palloc\n");
-		kpanic();
+		kpanic("Unable to determine a base address for palloc");
 	}
 
 	return start_address;
