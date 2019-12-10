@@ -103,6 +103,10 @@ void paging_switch_directory(uint32_t * page_dir, uint32_t phys)
 
 void page_fault_handler(struct isr_arguments *args)
 {
+    if(args->cr2 == 0x00) {
+        kpanic("Page Fault: Attempted to access page 0x00000000");
+    }
+
     // Does page exist, but not present?
     if(args->error_code & 0x1) {
         // Page protection violation

@@ -1,6 +1,7 @@
 # Kernel
 - Kernel currently implements:
-	- Paging... wow, feels like more should exist for this amount of code
+	- Paging
+	- KMalloc
 - Checkout TODO.md for current list of features to implement
 
 # Memory Layout
