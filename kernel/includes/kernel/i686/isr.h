@@ -22,6 +22,6 @@ void install_interrupt_handler(uint8_t interrupt_number, void (*handler)(struct 
 void default_isr_handler(struct isr_arguments *args);
 void default_irq_handler(struct isr_arguments *args);
 
-void interrupts_disable();
-void interrupts_resume();
-void interrupts_enable();
+void irq_disable();
+void irq_resume();
+void irq_enable();

@@ -105,7 +105,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 
 	// Enable interrupts
-	interrupts_enable();
+	irq_enable();
 
 	while(1);
 	__builtin_unreachable ();

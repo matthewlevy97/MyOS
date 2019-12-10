@@ -23,7 +23,7 @@ void isr_init()
 	sync_depth = 0;
 }
 
-void interrupts_disable()
+void irq_disable()
 {
 	uint32_t eflags;
 	asm volatile("pushf\n\t"
@@ -43,7 +43,7 @@ void interrupts_disable()
 	else
 		sync_depth++;
 }
-void interrupts_resume()
+void irq_resume()
 {
 	// Only enable interrupts if returned to first call depth
 	if(sync_depth == 0 || sync_depth == 1) {
@@ -52,7 +52,7 @@ void interrupts_resume()
 		sync_depth--;
 	}
 }
-void interrupts_enable()
+void irq_enable()
 {
 	sync_depth = 0;
 
