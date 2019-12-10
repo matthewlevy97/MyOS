@@ -81,14 +81,21 @@ _start:
 	loop 1b /* Loop until ecx-- == 0 */
 
 3:
-	/* Map multiboot header as "present" to 0xC03FEXXX */
+	/* Move multiboot header to page boundary */
+	movl %ebx, %edi
+	andl $0xFFFFF000, %edi // Page align
 	movl %ebx, %esi
-	andl $0xFFFFF000, %esi // Page align
-	orl $0x001, %esi       // Present bit
+	movl (%ebx), %ecx
+	cld
+	rep movsb
+
+	andl $0xFFFFF000, %ebx // Page align
+	movl %ebx, %esi
+	/* Map multiboot header as "present, writable" to 0xC03FEXXX */
+	orl $0x003, %esi       // Present bit
 	movl %esi, _kernel_page_table - 0xC0000000 + 1022 * 4
 	// Update ebx to new location
-	andl $0xFFF, %ebx
-	addl $0xC03FE000, %ebx
+	movl $0xC03FE000, %ebx
 
 	/* Map VGA buffer to 0xC03FF000 as "present, writable" */
 	movl $(0x000B8000 | 0x003), _kernel_page_table - 0xC0000000 + 1023 * 4

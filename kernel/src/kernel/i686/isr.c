@@ -6,6 +6,8 @@
 
 void (*interrupt_handlers[MAX_ISR_NUMBER])(struct isr_arguments*);
 
+static volatile uint32_t sync_depth;
+
 /**
  * @brief      Initialize the interrupt handlers to the defaults below
  */
@@ -17,6 +19,45 @@ void isr_init()
 		else 
 			interrupt_handlers[i] = default_isr_handler;
 	}
+
+	sync_depth = 0;
+}
+
+void interrupts_disable()
+{
+	uint32_t eflags;
+	asm volatile("pushf\n\t"
+				 "pop %%eax\n\t"
+				 "movl %%eax, %0\n\t"
+				 : "=r"(eflags)
+				 :
+				 : "%eax"
+	);
+
+	// Disable interrupts
+	SYNC_CLI();
+
+	// Is interrupt flag set
+	if(eflags & (1 << 9))
+		sync_depth = 1;
+	else
+		sync_depth++;
+}
+void interrupts_resume()
+{
+	// Only enable interrupts if returned to first call depth
+	if(sync_depth == 0 || sync_depth == 1) {
+		SYNC_STI();
+	} else {
+		sync_depth--;
+	}
+}
+void interrupts_enable()
+{
+	sync_depth = 0;
+
+	// Enable interrupts
+	SYNC_STI();
 }
 
 /**

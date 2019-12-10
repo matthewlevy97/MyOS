@@ -105,7 +105,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 
 	// Enable interrupts
-	asm volatile ("sti");
+	interrupts_enable();
 
 	while(1);
 	__builtin_unreachable ();
@@ -136,10 +136,10 @@ static uint32_t get_palloc_start_address(struct multiboot_tag_mmap *mb_mmap)
 		mmap_entry = mb_mmap->entries[i];
 		
 		/**
-		 * Only return an address if:
-		 * 	1) It is un-used/valid RAM
-		 * 	2) Starts after the kernel
-		 */
+		* Only return an address if:
+		* 	1) It is un-used/valid RAM
+		* 	2) Starts after the kernel
+		*/
 		if(mmap_entry.type == MULTIBOOT_MEMORY_AVAILABLE && mmap_entry.addr) {
 			if(mmap_entry.addr <= kernel_start_address && mmap_entry.addr + mmap_entry.len >= kernel_end_address)
 				start_address = PAGE_ALIGN(kernel_end_address) + PAGE_SIZE;

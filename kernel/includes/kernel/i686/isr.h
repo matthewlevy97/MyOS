@@ -4,6 +4,9 @@
 
 #define MAX_ISR_NUMBER 256
 
+#define SYNC_CLI() do {asm volatile("cli");} while(0);
+#define SYNC_STI() do {asm volatile("sti");} while (0);
+
 struct isr_arguments {
 	uint32_t cr2, ds;
 	uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; // Pushed by pusha.
@@ -18,3 +21,7 @@ void install_interrupt_handler(uint8_t interrupt_number, void (*handler)(struct 
 
 void default_isr_handler(struct isr_arguments *args);
 void default_irq_handler(struct isr_arguments *args);
+
+void interrupts_disable();
+void interrupts_resume();
+void interrupts_enable();

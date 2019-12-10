@@ -37,7 +37,7 @@ static        void screen_clear();
  */
 void kprint_init()
 {
-	VGA_BUFFER = (volatile uint16_t*)0xC03FF000;
+	VGA_BUFFER = (volatile uint16_t*)VGA_BUFFER_ADDRESS;
 
 	screen.width  = 80;
 	screen.height = 25;
