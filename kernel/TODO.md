@@ -13,7 +13,7 @@
 	- expand heap size
 - Implement filesystem
 	- abstract code between low level and high level FS functionality (VFS)
-- Errno for libk functions
+- Errno for libc functions
 - Improve kpanic()
 	- Dump registers when calling kpanic
 - Implement kernel threads
