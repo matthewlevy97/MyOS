@@ -3,6 +3,8 @@
 #include <stddef.h>
 #include <multiboot/multiboot2.h>
 
+#define RSDP_SIGNATURE "RSD PTR "
+
 typedef enum {
 	RSDP_INVALID,
 	RSDP_1,

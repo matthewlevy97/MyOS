@@ -95,3 +95,48 @@ char *reverse(char * restrict str, size_t n)
 
 	return str;
 }
+
+int strcmp(const char *s1, const char *s2)
+{
+	char *a, *b;
+
+	a = (char*)s1;
+	b = (char*)s2;
+
+	while(*a) {
+		if(*a == *b) {
+			a++;
+			b++;
+		} else if(*a < *b) {
+			return -1;
+		} else {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+int strncmp(const char *s1, const char *s2, size_t n)
+{
+	char *a, *b;
+
+	// XXX: If n == 0, return 0. Is this correct behavior?
+	if(!n) return 0;
+
+	a = (char*)s1;
+	b = (char*)s2;
+
+	while(*a && n--) {
+		if(*a == *b) {
+			a++;
+			b++;
+		} else if(*a < *b) {
+			return -1;
+		} else {
+			return 1;
+		}
+	}
+
+	return 0;
+}
