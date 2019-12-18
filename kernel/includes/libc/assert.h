@@ -1,7 +1,17 @@
 #pragma once
 
+/**
+ * Will need to tidy-up once getting ready for user-modes
+ */
+
 #include <stddef.h>
+#include <kpanic.h>
+#include <kprint.h>
 
-void __assert(char *condition, char *file_name, size_t line_number);
+#define ASSERT(condition) (void)((condition) || (panic("ASSERTION FAILED: " #condition),0))
 
-#define ASSERT(condition) (void)((condition) || (__assert(#condition, __FILE__, __LINE__),0))
+#ifdef __KERNEL_CODE
+#define panic(msg) kpanic(msg)
+#else
+#define panic(msg) kprintf("PANIC: %s\n", msg)
+#endif

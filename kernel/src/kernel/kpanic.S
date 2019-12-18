@@ -1,7 +1,7 @@
 .section .rodata
 
 kpanic_string:
-	.asciz "--- snip ---\nKernel Panic:\n\tAddress: 0x%x\n\tMessage: %s\n"
+	.asciz "--- snip ---\nKernel Panic:\n\tAddress: 0x%x\n\t%s\n"
 kpanic_stack_trace:
 	.asciz "Stack Trace:\n"
 
@@ -13,10 +13,10 @@ kpanic_stack_trace:
 .extern dump_hex
 .type dump_hex, @function
 
-.global kpanic
-.type kpanic, @function
+.global kpanic_implementation
+.type kpanic_implementation, @function
 
-kpanic:
+kpanic_implementation:
 	// Display error message
 	push $kpanic_string
 	call kprintf
@@ -41,4 +41,4 @@ kpanic:
 	cli
 2:	hlt
 	jmp 2b
-.size kpanic, . - kpanic
+.size kpanic_implementation_size, . - kpanic_implementation

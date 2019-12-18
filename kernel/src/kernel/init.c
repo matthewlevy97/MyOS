@@ -1,3 +1,4 @@
+#include <acpi.h>
 #include <macros.h>
 #include <kprint.h>
 #include <kpanic.h>
@@ -24,6 +25,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 {
 	struct multiboot_tag_string *mb_cmdline;
 	struct multiboot_tag_mmap *mb_mmap;
+	struct multiboot_tag_new_acpi *mb_acpi;
 
 	void * tmp_mb_header;
 
@@ -53,6 +55,9 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 		kpanic("Could not get memory map from multiboot header");
 	}
 	palloc_init_address = get_palloc_start_address(mb_mmap);
+
+	mb_acpi = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_ACPI_OLD);
+	acpi_init(mb_acpi);
 
 	isr_init();
 	kprintf(KPRINT_DEBUG "Installed default ISR handlers\n");

@@ -3,6 +3,8 @@ AS=i686-elf-as
 
 KERNEL_NAME=kernel
 
+KERNEL_HDA=hda.img
+
 KERNEL_INCLUDE_DIR=includes/kernel
 LIBC_INCLUDE_DIR=includes/libc
 LINKER_SCRIPT=linker.ld
@@ -54,20 +56,22 @@ src/kernel/i686/crtbegin.o src/kernel/i686/crtend.o:
 $(SYS_ROOT): install_headers
 
 run: install
-	qemu-system-i386 -drive format=raw,media=cdrom,file=$(KERNEL_ISO) \
+	qemu-system-i386 -cdrom $(KERNEL_ISO) \
+	-hda $(KERNEL_HDA) \
 	-m 128 \
 	-serial stdio \
 	-no-reboot
 
 debug: install
-	qemu-system-i386 -drive format=raw,media=cdrom,file=$(KERNEL_ISO) \
+	qemu-system-i386 -cdrom =$(KERNEL_ISO) \
+	-hda $(KERNEL_HDA) \
 	-m 128 \
 	-serial stdio \
 	-s -S \
 	-d int,cpu_reset \
 	-no-reboot -no-shutdown
 
-install: install_headers install_kernel build
+install: install_headers install_kernel build $(KERNEL_HDA)
 
 install_headers:
 	mkdir -p $(SYS_ROOT)/usr/lib
@@ -86,11 +90,15 @@ install_kernel: $(KERNEL_BIN)
 	@echo '\tboot'                            >> $(SYS_ROOT)/boot/grub/grub.cfg
 	@echo '}'                                 >> $(SYS_ROOT)/boot/grub/grub.cfg
 
+$(KERNEL_HDA):
+	dd if=/dev/zero of=$(KERNEL_HDA) bs=1024 count=10240
+	echo 'y' | mkfs.ext2 -q -I 128 $(KERNEL_HDA)
+
 build: $(SYS_ROOT)
 	@grub-mkrescue -o $(KERNEL_ISO) $(SYS_ROOT)
 
 clean:
-	rm -f $(KERNEL_BIN) $(KERNEL_ISO)
+	rm -f $(KERNEL_BIN) $(KERNEL_ISO) $(KERNEL_HDA)
 	rm -rf $(SYS_ROOT)
 	rm -f $(OBJS)
 	rm -f $(OBJS:.o=.d)
