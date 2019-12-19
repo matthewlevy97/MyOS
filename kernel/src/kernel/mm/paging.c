@@ -17,6 +17,7 @@
 static uint32_t *paging_directory = (uint32_t*)0xFFFFF000;
 
 static void map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags);
+static inline void native_flush_tlb_single(uintptr_t addr);
 
 void paging_init()
 {
@@ -146,6 +147,8 @@ void paging_unmap(void *virtual_address)
     if(pt != 0x00)
         return;
     
+    native_flush_tlb_single((uintptr_t)virtual_address);
+
     physical_address = pt[ptindex] & ~0xFFF;
     pt[ptindex] = 0;
 
@@ -199,4 +202,9 @@ void page_fault_handler(struct isr_arguments *args)
         // Instruction fetch from NX-page
         kprintf("NX\n");
     }
+}
+
+static inline void native_flush_tlb_single(uintptr_t addr)
+{
+   asm volatile("invlpg (%0)" ::"r" (addr) : "memory");
 }
