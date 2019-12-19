@@ -21,3 +21,11 @@
 	- rodata is read-only
 	- text is executable
 	- etc
+- Implement PCIe bus reader
+- Implement ATA driver
+- Ability to power control (ACPI) device
+- Setup systemcalls
+- Multitasking
+	- Task schedule for processes
+	- Setup TSS
+- Jump to usermode->kernel->usermode

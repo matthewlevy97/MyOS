@@ -3,9 +3,10 @@
 #include <kprint.h>
 #include <string.h>
 #include <mm/paging.h>
+#include <mm/kmalloc.h>
 
 static RSDP_VERSION is_rsdp_valid(RSDPv1 *rsdp);
-static void parse_rsdt(RSDPv1 *rsdp, const char *identifier);
+static SDT_Header *find_rsdt_identifier(RSDPv1 *rsdp, const char *identifier);
 
 void acpi_init(struct multiboot_tag_new_acpi *acpi_tag)
 {
@@ -18,8 +19,6 @@ void acpi_init(struct multiboot_tag_new_acpi *acpi_tag)
 		kpanic("Invalid RSDP structure");
 
 	kprintf(KPRINT_DEBUG "ACPI - Version: %d - OEMID: '%s'\n", version, rsdp->oemid);
-
-	parse_rsdt(rsdp, "TEST");
 }
 
 /**
@@ -61,10 +60,11 @@ static RSDP_VERSION is_rsdp_valid(RSDPv1 *rsdp)
  *
  * @param      rsdp  The rsdp
  */
-static void parse_rsdt(RSDPv1 *rsdp, const char *identifier)
+static SDT_Header *find_rsdt_identifier(RSDPv1 *rsdp, const char *identifier)
 {
-	RSDT *rsdt, *tmp;
-	uint32_t entries;
+	RSDT *rsdt;
+	SDT_Header *tmp;
+	uint32_t entries, length;
 
 	rsdt = (RSDT*)rsdp->rsdt_address;
 
@@ -72,18 +72,21 @@ static void parse_rsdt(RSDPv1 *rsdp, const char *identifier)
 	// TODO: Need code to dish out temporary virtual addresses
 	paging_map2(rsdt, (void*)PAGE_ALIGN((uintptr_t)rsdp->rsdt_address), PAGE_PRESENT | PAGE_READ_WRITE, 0);
 
-	kprintf("<%s>\n", rsdt->header.signature);
-	entries = (rsdt->header.length - sizeof(struct SDT_Header)) / sizeof(uintptr_t);
-	kprintf("%d\n", entries);
-
-	int i = 0;
-	while(rsdt->sdt_ptrs[i]) {
+	entries = (rsdt->header.length - sizeof(SDT_Header)) / sizeof(uintptr_t);
+	for(uint32_t i = 0; i < entries; i++) {
 		tmp = rsdt->sdt_ptrs[i];
 		paging_map2(tmp, (void*)PAGE_ALIGN((uintptr_t)tmp), PAGE_PRESENT | PAGE_READ_WRITE, 0);
-		kprintf("%x\n", tmp);
-		kprintf("%s\n", tmp->header.signature);
-		i++;
+		
+		// Check for match and copy into buffer
+		if(strncmp(tmp->signature, identifier, sizeof(tmp->signature)) == 0) {
+			length = tmp->length;
+			tmp = kmalloc(length);
+			memcpy(tmp, (void*)(rsdt->sdt_ptrs[i]), length);
+			return tmp;
+		}
 		
 		paging_unmap(tmp);
 	}
+
+	return NULL;
 }

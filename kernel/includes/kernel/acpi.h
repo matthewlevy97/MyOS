@@ -11,7 +11,7 @@ typedef enum {
 	RSDP_2	
 } RSDP_VERSION;
 
-struct SDT_Header {
+typedef struct {
 	char     signature[4];
 	uint32_t length;
 	uint8_t  revision;
@@ -21,11 +21,11 @@ struct SDT_Header {
 	uint32_t oem_revision;
 	uint32_t creator_id;
 	uint32_t creator_revision;
-};
+} SDT_Header;
 
 typedef struct root_system_descriptor_table {
-	struct SDT_Header header;
-	uintptr_t         sdt_ptrs[0];
+	SDT_Header header;
+	uintptr_t  sdt_ptrs[0];
 } RSDT;
 
 typedef struct root_system_descriptor_pointer {
