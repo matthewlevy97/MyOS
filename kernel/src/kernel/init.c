@@ -56,9 +56,6 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	}
 	palloc_init_address = get_palloc_start_address(mb_mmap);
 
-	mb_acpi = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_ACPI_OLD);
-	acpi_init(mb_acpi);
-
 	isr_init();
 	kprintf(KPRINT_DEBUG "Installed default ISR handlers\n");
 
@@ -106,6 +103,10 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	timer_init(50);
 	kprintf(KPRINT_DEBUG "PIT Initialized\n");
+
+	mb_acpi = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_ACPI_OLD);
+	acpi_init(mb_acpi);
+	kprintf(KPRINT_DEBUG "ACPI Initialized\n");
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 

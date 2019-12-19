@@ -234,8 +234,7 @@ static inline struct block_meta *ptr_to_block(void *ptr)
 
 static inline void map_heap_page()
 {
-	paging_map((void*)palloc_physical(),
-		heap_top_address,
+	paging_map(heap_top_address,
 		PAGE_PRESENT | PAGE_READ_WRITE);
 
 	heap_top_address += PAGE_SIZE;

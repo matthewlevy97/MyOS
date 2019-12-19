@@ -89,7 +89,7 @@ void disable_vga_output()
  * @param      hex_bytes        The string of bytes to print in hex
  * @param[in]  number_of_bytes  The number of bytes to display
  */
-void dump_hex(int *hex_bytes, uint32_t number_of_bytes)
+void dump_hex(int32_t *hex_bytes, uint32_t number_of_bytes)
 {
 	kprintf("0x%x: ", hex_bytes);
 

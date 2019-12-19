@@ -16,6 +16,8 @@
 
 static uint32_t *paging_directory = (uint32_t*)0xFFFFF000;
 
+static void map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags);
+
 void paging_init()
 {
 	kprintf(KPRINT_DEBUG "Paging Directory Address: 0x%x\n", paging_directory);
@@ -44,13 +46,42 @@ void * paging_virtual_to_physical(void *virtual_address)
     return (void *)((pt[ptindex] & ~0xFFF) + ((uint32_t)virtual_address & 0xFFF));
 }
 
-void paging_map(void *physical_address, void *virtual_address, uint32_t flags)
+/*
+ * Rewrite:
+ *  paging_map() to do map_implementation(palloc_physical(), virt_addr, flags, mflags_default)
+ *  paging_map2() to do {palloc_mark(phys_addr); map_implementation(phy, virt, pflags, mflags)}
+ */
+
+inline void paging_map(void *virtual_address, uint32_t flags)
+{
+    void * physical_address;
+    
+    physical_address = (void*)palloc_physical();
+    if(physical_address == 0x00)
+        return;
+
+    map_implementation(physical_address, virtual_address, flags, MAPPING_WIPE_PAGE);
+}
+inline void paging_map2(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags)
+{
+    if(physical_address == 0x00)
+        return;
+
+    palloc_mark_inuse((uintptr_t)physical_address);
+
+    map_implementation(physical_address, virtual_address, page_flags, mapping_flags);
+}
+
+static void map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags)
 {
 	uint32_t pdindex, ptindex;
 	uint32_t *pt, pt_entry;
 
-	pdindex = (uint32_t)virtual_address >> 22;
-    ptindex = (uint32_t)virtual_address >> 12 & 0x03FF;
+    if(virtual_address == 0x00)
+        return;
+
+    pdindex = (uint32_t)virtual_address >> 22;
+    ptindex = ((uint32_t)virtual_address >> 12) & 0x03FF;
     
     if((paging_directory[pdindex]) == 0x00) {
     	// Create a new page table entry and update page directory
@@ -73,24 +104,52 @@ void paging_map(void *physical_address, void *virtual_address, uint32_t flags)
     if(pt == 0x00) {
     	// TODO: Page already exists, what do we do now???
     	kprintf(KPRINT_DEBUG "Page already exists! (Physical: 0x%x, Virtual: 0x%x)\n",
-    		(uint32_t)physical_address, (uint32_t)virtual_address);
+    		(uintptr_t)physical_address, (uintptr_t)virtual_address);
     	return;
     }
     
-    pt_entry = flags & 0xFFF;
+    pt_entry = page_flags & 0xFFF;
     pt_entry |= (uint32_t)physical_address; 
     pt[ptindex] = pt_entry;
 
     /**
      * Wipe page contents
     */
-    memset(virtual_address, 0, PAGE_SIZE);
+    if(mapping_flags & MAPPING_WIPE_PAGE)
+        memset(virtual_address, 0, PAGE_SIZE);
 
     /**
      * Need to flush TLB changes
      * XXX: Is this needed actually?
      */
     paging_switch_directory(paging_directory, 0);
+}
+
+/**
+ * @brief      Unmap a virtual address from memory
+ *
+ * @param      virtual_address  The virtual address
+ */
+void paging_unmap(void *virtual_address)
+{
+    uint32_t pdindex, ptindex, *pt;
+    uintptr_t physical_address;
+
+    pdindex = (uint32_t)virtual_address >> 22;
+    ptindex = ((uint32_t)virtual_address >> 12) & 0x03FF;
+    
+    // Nothing to do here as it doesn't exist
+    if((paging_directory[pdindex]) == 0x00)
+        return;
+
+    pt = (uint32_t*)(REFLECTED_PAGE_TABLE_BASE_ADDRESS + PAGE_SIZE * pdindex);
+    if(pt != 0x00)
+        return;
+    
+    physical_address = pt[ptindex] & ~0xFFF;
+    pt[ptindex] = 0;
+
+    palloc_release((uintptr_t)physical_address);
 }
 
 void paging_switch_directory(uint32_t * page_dir, uint32_t phys)
@@ -117,14 +176,13 @@ void page_fault_handler(struct isr_arguments *args)
         // Write access
         kprintf("WRITE\n");
     } else {
-        // Read access
-        uint32_t addr;
-        // TODO: Determine which permissions/flags to set for the page
-        addr = palloc_physical();
-        paging_map((void*)addr,
-            (void*)(args->cr2),
-            PAGE_PRESENT | PAGE_READ_WRITE);
+        kprintf("READ\n");
     }
+
+    // Load page
+    // TODO: Determine which permissions/flags to set for the page
+    paging_map((void*)(args->cr2),
+        PAGE_PRESENT | PAGE_READ_WRITE);
 
     if(args->error_code & 0x4) {
         // When set, the page fault was caused while CPL = 3.

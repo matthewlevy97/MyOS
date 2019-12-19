@@ -11,21 +11,38 @@ typedef enum {
 	RSDP_2	
 } RSDP_VERSION;
 
-struct root_system_descriptor_pointer {
-	uint8_t signature[8];
-	uint8_t checksum;
-	uint8_t OEMID[6];
-	uint8_t revision;
-	uint32_t rsdt_address;
-} __attribute__ ((packed));
+struct SDT_Header {
+	char     signature[4];
+	uint32_t length;
+	uint8_t  revision;
+	uint8_t  checksum;
+	char     oemid[6];
+	char     oem_table_id[8];
+	uint32_t oem_revision;
+	uint32_t creator_id;
+	uint32_t creator_revision;
+};
 
-struct root_system_descriptor_pointer_2 {
-	struct root_system_descriptor_pointer version1;
+typedef struct root_system_descriptor_table {
+	struct SDT_Header header;
+	uintptr_t         sdt_ptrs[0];
+} RSDT;
+
+typedef struct root_system_descriptor_pointer {
+	char     signature[8];
+	uint8_t  checksum;
+	char     oemid[6];
+	uint8_t  revision;
+	RSDT*    rsdt_address;
+} RSDPv1;
+
+typedef struct root_system_descriptor_pointer_v2 {
+	struct root_system_descriptor_pointer version_1;
 	
 	uint32_t length;
 	uint64_t xsdt_address;
-	uint8_t extended_checksum;
-	uint8_t reserved[3];
-} __attribute__ ((packed));
+	uint8_t  extended_checksum;
+	uint8_t  reserved[3];
+} RSDPv2;
 
 void acpi_init(struct multiboot_tag_new_acpi *acpi_tag);

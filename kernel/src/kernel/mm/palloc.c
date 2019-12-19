@@ -14,16 +14,16 @@ static struct multiboot_mmap_entry *mmap_entries;
 static void * allocated_pages_bitmap;
 static uint32_t bitmap_size;
 
-static uint32_t base_address;
+static uintptr_t base_address;
 
-static uint32_t find_index_by_address(uint32_t address);
+static uint32_t find_index_by_address(uintptr_t address);
 
 /**
  * @brief      Stage 1 initialization, sets-up palloc w/ a small number of pages
  *
  * @param[in]  low_address  The base address to start palloc from
  */
-void palloc_init(uint32_t low_address)
+void palloc_init(uintptr_t low_address)
 {
 	// Zero bitmap
 	memset(initial_palloc_bitmap, 0, sizeof(initial_palloc_bitmap));
@@ -46,7 +46,7 @@ void palloc_init(uint32_t low_address)
  * @param[in]  low_address  The base address to start palloc from
  * @param      mb_mmap      The memory map from multiboot header mmap
  */
-void palloc_init2(uint32_t low_address, struct multiboot_tag_mmap *mb_mmap)
+void palloc_init2(uintptr_t low_address, struct multiboot_tag_mmap *mb_mmap)
 {
 	struct multiboot_mmap_entry mmap_entry;
 
@@ -89,9 +89,10 @@ void palloc_init2(uint32_t low_address, struct multiboot_tag_mmap *mb_mmap)
  *
  * @return     Physical address of valid, unused page
  */
-uint32_t palloc_physical()
+uintptr_t palloc_physical()
 {
-	uint32_t index, address;
+	uint32_t index;
+	uintptr_t address;
 	
 	index = bitmap_get_first_clear(allocated_pages_bitmap, bitmap_size);
 	if(index >= bitmap_size) {
@@ -137,10 +138,13 @@ success:
  * 
  * Reverses the algorithm of palloc_physical()
  */
-void palloc_release(uint32_t address)
+void palloc_release(uintptr_t address)
 {
 	uint32_t index;
 	index = find_index_by_address(address);
+	if(index >= bitmap_size) {
+		return;
+	}
 	
 	bitmap_clear(allocated_pages_bitmap, bitmap_size, index);
 }
@@ -150,15 +154,18 @@ void palloc_release(uint32_t address)
  *
  * @param[in]  address  The physical page address
  */
-void palloc_mark_inuse(uint32_t address)
+void palloc_mark_inuse(uintptr_t address)
 {
 	uint32_t index;
 	index = find_index_by_address(address);
+	if(index >= bitmap_size) {
+		return;
+	}
 	
 	bitmap_set(allocated_pages_bitmap, bitmap_size, index);
 }
 
-static uint32_t find_index_by_address(uint32_t address)
+static uint32_t find_index_by_address(uintptr_t address)
 {
 	uint32_t index;
 
