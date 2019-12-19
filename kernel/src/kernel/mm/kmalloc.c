@@ -1,6 +1,5 @@
 #include <mm/kmalloc.h>
 #include <mm/paging.h>
-#include <mm/palloc.h>
 #include <assert.h>
 #include <string.h>
 #include <kpanic.h>
