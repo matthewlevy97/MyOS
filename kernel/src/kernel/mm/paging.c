@@ -186,7 +186,7 @@ void page_fault_handler(struct isr_arguments *args)
     } else {
         kprintf("READ\n");
     }
-
+    
     // Load page
     // TODO: Determine which permissions/flags to set for the page
     paging_map((void*)(args->cr2),

@@ -38,14 +38,10 @@ task_t *task_create(void (*main)(), uint32_t eflags, void *pagedir_physical, uin
     if(creation_flags & NO_CREATE_STACK) {
     	task->registers.esp = 0;
     } else {
-    	task->registers.esp = (uintptr_t)create_new_task_stack();
+    	stack_ptr = create_new_task_stack();
+    	*stack_ptr = (uintptr_t)main; // eip
 
-    	stack_ptr = task->registers.esp;
-    	stack_ptr[0] = 0x42424242;      // ebx
-    	stack_ptr[1] = 0xCAFEBABE;      // esi
-    	stack_ptr[2] = 0x41414141;      // edi
-    	stack_ptr[3] = 0xDEADBEEF;      // ebp
-    	stack_ptr[4] = (uintptr_t)main; // eip
+    	task->registers.esp = (uint32_t)stack_ptr;
     }
 
     task->next = NULL;
@@ -55,14 +51,16 @@ task_t *task_create(void (*main)(), uint32_t eflags, void *pagedir_physical, uin
 
 void task_yield()
 {
-	task_t *current;
-
 	task_switch(current_task->next);
 }
 
+/*
+ * TODO: Create new page directory with new kernel stack
+ * TODO: If not in kernel -> local stack, and local heap; else, local stack = kernel stack, no create local heap
+*/
 static inline void * create_new_task_stack()
 {
-	paging_map((void*)TASK_STACK_BASE_ADDRESS - PAGE_SIZE, PAGE_PRESENT | PAGE_READ_WRITE);
+	paging_map((void*)PAGE_ALIGN(TASK_STACK_BASE_ADDRESS), PAGE_PRESENT | PAGE_READ_WRITE);
 
-	return (void*)TASK_STACK_BASE_ADDRESS;
+	return (void*)(TASK_STACK_BASE_ADDRESS - (TASK_STACK_BASE_ADDRESS & 3) - sizeof(int) * 16);
 }

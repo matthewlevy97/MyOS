@@ -21,8 +21,11 @@ static uint32_t get_palloc_start_address(struct multiboot_tag_mmap *mb_mmap);
 
 void test()
 {
+	int x;
+	x = 0;
 	while(1) {
-		kprintf("AAA\n");
+		x++;
+		kprintf("TEST0: %d\n", x);
 		task_yield();
 	}
 }

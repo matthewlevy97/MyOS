@@ -3,7 +3,7 @@
 #include <stddef.h>
 #include <macros.h>
 
-#define TASK_STACK_BASE_ADDRESS 0x80000000
+#define TASK_STACK_BASE_ADDRESS 0x7FFFFFFF
 
 enum task_creation_flags {
 	NO_CREATE_STACK = 0x01

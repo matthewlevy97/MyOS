@@ -11,10 +11,8 @@
 
 /* void task_switch(task_t *next_task); */
 task_switch:
-	push %ebx
-	push %esi
+	// save edi to stack to be able to get its value below
 	push %edi
-	push %ebp
 
 	mov current_task, %edi	// address of current task_t structure
 
@@ -24,15 +22,19 @@ task_switch:
 	mov %ecx, 8(%edi)
 	mov %edx, 12(%edi)
 	
-	mov -4(%esp), %eax		// Get edi value from stack (pushed)
+	mov (%esp), %eax		// Get edi value from stack (pushed)
 	mov %eax, 16(%edi)
 	mov %esi, 20(%edi)
+
+	// remove edi from stack
+	// must be done before esp is saved
+	pop %esi
 
     mov %esp, 24(%edi)
     mov %ebp, 28(%edi)
 
     // esi = next_task parameter
-    mov 20(%esp), %esi
+    mov 4(%esp), %esi
     // Set current_task to next_task
     mov %esi, current_task
 
@@ -54,9 +56,16 @@ task_switch:
     mov %eax, %cr3		// Only reload if different
 
 .no_reload_page_dir:
-	pop %ebx
-	pop %esi
-	pop %edi
-	pop %ebp
+	// Save registers
+	mov 0(%esi), %eax
+	mov 4(%esi), %ebx
+	mov 8(%esi), %ecx
+	mov 12(%esi), %edx
+
+    mov 24(%esi), %esp
+    mov 28(%esi), %ebp
+
+    mov 16(%esi), %edi
+    mov 20(%esi), %esi
 
 	ret
