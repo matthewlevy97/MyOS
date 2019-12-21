@@ -26,3 +26,17 @@ idt_flush:
 	lidt (%eax)        // Load the IDT pointer.
 	ret
 .size idt_flush, . - idt_flush
+
+.global tss_flush
+.type tss_flush, @function
+
+tss_flush:
+	/**
+	Load the index of our TSS structure - The index is
+	0x28, as it is the 5th selector and each is 8 bytes
+	long, but we set the bottom two bits (making 0x2B)
+	so that it has an RPL of 3, not zero.
+	*/
+	mov $0x2B, %ax
+   	ltr %ax
+	ret

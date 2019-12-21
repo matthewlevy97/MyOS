@@ -63,7 +63,7 @@ run: install
 	-no-reboot
 
 debug: install
-	qemu-system-i386 -cdrom =$(KERNEL_ISO) \
+	qemu-system-i386 -cdrom $(KERNEL_ISO) \
 	-hda $(KERNEL_HDA) \
 	-m 128 \
 	-serial stdio \

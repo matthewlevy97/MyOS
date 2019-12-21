@@ -2,24 +2,71 @@
 #include <i686/isr.h>
 #include <string.h>
 
-extern void gdt_flush(uint32_t address);
-extern void idt_flush(uint32_t address);
-
-struct gdt_entry_s gdt_entries[5];
+struct gdt_entry_s gdt_entries[6];
 struct gdt_ptr_s   gdt_ptr;
 
 struct idt_entry_s idt_entries[MAX_ISR_NUMBER];
 struct idt_ptr_s   idt_ptr;
 
+struct task_state_segment_s tss_entry;
+
 static void gdt_init();
 static void idt_init();
 static void irq_init();
 
-static void gdt_set_gate(uint8_t index,
-	uint32_t base, uint32_t limit,
-	uint8_t access, uint8_t granularity);
-static void idt_set_gate(uint8_t index,
-	uint32_t base, uint16_t sel, uint8_t flags);
+static void gdt_set_gate(uint8_t index, uint32_t base, uint32_t limit, uint8_t access, uint8_t granularity);
+static void tss_set_gate(uint8_t index, struct task_state_segment_s *tss_entry, uint8_t granularity);
+static void idt_set_gate(uint8_t index, uint32_t base, uint16_t sel, uint8_t flags);
+
+extern void isr0();
+extern void isr1();
+extern void isr2();
+extern void isr3();
+extern void isr4();
+extern void isr5();
+extern void isr6();
+extern void isr7();
+extern void isr8();
+extern void isr9();
+extern void isr10();
+extern void isr11();
+extern void isr12();
+extern void isr13();
+extern void isr14();
+extern void isr15();
+extern void isr16();
+extern void isr17();
+extern void isr18();
+extern void isr19();
+extern void isr20();
+extern void isr21();
+extern void isr22();
+extern void isr23();
+extern void isr24();
+extern void isr25();
+extern void isr26();
+extern void isr27();
+extern void isr28();
+extern void isr29();
+extern void isr30();
+extern void isr31();
+
+extern void irq0();
+extern void irq1();
+extern void irq2();
+extern void irq3();
+extern void irq4();
+extern void irq5();
+extern void irq6();
+extern void irq7();
+extern void irq8();
+extern void irq9();
+extern void irq10();
+extern void irq11();
+extern void irq12();
+extern void irq13();
+extern void irq14();
+extern void irq15();
 
 /**
  * @brief      Initialize all descriptor tables
@@ -35,6 +82,16 @@ void descriptor_tables_init()
 }
 
 /**
+ * @brief      Sets the kernel stack in a TSS
+ *
+ * @param[in]  stack_address  The stack address
+ */
+void set_kernel_stack(uintptr_t stack_address)
+{
+	tss_entry.esp0 = stack_address;
+}
+
+/**
  * @brief      Initialize the GDT
  */
 static void gdt_init()
@@ -45,14 +102,29 @@ static void gdt_init()
 	/**
 	 * TODO: Update this
 	 * 	User mode should not have full access to all memory
-	 * 	Need a TSS segment
 	 * 	Code and Data segments should NOT overlap
 	 */
-	gdt_set_gate(0, 0, 0, 0, 0);                // Null segment
-	gdt_set_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF); // Code segment
-	gdt_set_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF); // Data segment
-	gdt_set_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); // User mode code segment
-	gdt_set_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); // User mode data segment
+	// Null segment
+	gdt_set_gate(0, 0, 0, 0, 0);
+
+	// Code segment
+	gdt_set_gate(1, 0, 0xFFFFFFFF,
+		GDT_PRESENT | GDT_NOT_SYSTEM_SEGMENT  | GDT_EXECUTABLE | GDT_READ_WRITE, 0xCF);
+
+	// Data segment
+	gdt_set_gate(2, 0, 0xFFFFFFFF,
+		GDT_PRESENT | GDT_NOT_SYSTEM_SEGMENT | GDT_READ_WRITE, 0xCF);
+
+	// User mode code segment
+	gdt_set_gate(3, 0, 0xFFFFFFFF,
+		GDT_PRESENT | GDT_RING_3 | GDT_NOT_SYSTEM_SEGMENT  | GDT_EXECUTABLE | GDT_READ_WRITE, 0xCF);
+
+	// User mode data segment
+	gdt_set_gate(4, 0, 0xFFFFFFFF,
+		GDT_PRESENT | GDT_RING_3 | GDT_NOT_SYSTEM_SEGMENT | GDT_READ_WRITE, 0xCF);
+
+	// Task State Segment (TSS)
+	tss_set_gate(5, &tss_entry, 0xCF);
 }
 
 /**
@@ -134,9 +206,7 @@ static void irq_init()
  * @param[in]  access       The access rights/permissions for the segment
  * @param[in]  granularity  The granularity of the segment
  */
-static void gdt_set_gate(uint8_t index,
-	uint32_t base, uint32_t limit,
-	uint8_t access, uint8_t granularity)
+static void gdt_set_gate(uint8_t index, uint32_t base, uint32_t limit, uint8_t access, uint8_t granularity)
 {
 	gdt_entries[index].base_low    = (base & 0xFFFF);
 	gdt_entries[index].base_middle = (base >> 16) & 0xFF;
@@ -150,6 +220,35 @@ static void gdt_set_gate(uint8_t index,
 }
 
 /**
+ * @brief      Populate a GDT entry with a Task State Segment
+ *
+ * @param[in]  index        The index into the gdt_entries array
+ * @param      tss_entry    Pointer to the tss entry to load
+ * @param[in]  granularity  The granularity of the segment
+ */
+static void tss_set_gate(uint8_t index, struct task_state_segment_s *tss_entry, uint8_t granularity)
+{
+	uint32_t base, limit;
+
+	base  = (uint32_t)tss_entry;
+	limit = sizeof(struct task_state_segment_s);
+
+	gdt_entries[index].base_low    = (base & 0xFFFF);
+	gdt_entries[index].base_middle = (base >> 16) & 0xFF;
+	gdt_entries[index].base_high   = (base >> 24) & 0xFF;
+
+	gdt_entries[index].limit_low   = (limit & 0xFFFF);
+	gdt_entries[index].granularity = (limit >> 16) & 0x0F;
+
+	gdt_entries[index].granularity |= granularity & 0xF0; // 0xCF is same granulatity for others
+	gdt_entries[index].access      = GDT_PRESENT | GDT_RING_3 | GDT_EXECUTABLE | GDT_READ_WRITE | GDT_ACCESSED;
+
+	memset(tss_entry, 0, sizeof(struct task_state_segment_s));
+	tss_entry->ss0  = 0x10; // Kernel stack segment
+	tss_entry->esp0 = 0xDEADBEEF; // Should be set before task switching
+}
+
+/**
  * @brief      Populate an IDT entry
  *
  * @param[in]  index     The index into the idt_entries array
@@ -157,8 +256,7 @@ static void gdt_set_gate(uint8_t index,
  * @param[in]  selector  The selector
  * @param[in]  flags     The flags
  */
-static void idt_set_gate(uint8_t index,
-	uint32_t base, uint16_t sel, uint8_t flags)
+static void idt_set_gate(uint8_t index, uint32_t base, uint16_t sel, uint8_t flags)
 {
 	idt_entries[index].base_lo = base & 0xFFFF;
 	idt_entries[index].base_hi = (base >> 16) & 0xFFFF;

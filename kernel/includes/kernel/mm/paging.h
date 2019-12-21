@@ -28,6 +28,8 @@ enum page_mapping_flags {
 };
 
 void paging_init();
+
+void * paging_directory_address_physical();
 void * paging_virtual_to_physical(void *virtual_address);
 
 void paging_map(void *virtual_address, uint32_t flags);

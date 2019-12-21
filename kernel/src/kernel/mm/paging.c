@@ -14,7 +14,7 @@
  * 	page_directory recursively mapped to 0xFFFFF000
 */
 
-static uint32_t *paging_directory = (uint32_t*)0xFFFFF000;
+static uintptr_t *paging_directory = (uint32_t*)0xFFFFF000;
 
 static void map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags);
 static inline void native_flush_tlb_single(uintptr_t addr);
@@ -23,6 +23,11 @@ void paging_init()
 {
 	kprintf(KPRINT_DEBUG "Paging Directory Address: 0x%x\n", paging_directory);
     install_interrupt_handler(14, page_fault_handler);
+}
+
+void * paging_directory_address_physical()
+{
+    return paging_virtual_to_physical(paging_directory);
 }
 
 void * paging_virtual_to_physical(void *virtual_address)
@@ -95,7 +100,7 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
     	
     	pt = paging_virtual_to_physical(pt);
     	if(!pt) {
-    		kpanic("Failed to get physical address of new page table");
+    		kpanic("Failed to get physical address of new page table!");
     	}
 
     	paging_directory[pdindex] = ((uint32_t)pt & ~0xFFF) | PAGE_PRESENT | PAGE_READ_WRITE;
@@ -166,7 +171,7 @@ void paging_switch_directory(uint32_t * page_dir, uint32_t phys)
 void page_fault_handler(struct isr_arguments *args)
 {
     if(args->cr2 == 0x00) {
-        kpanic("Page Fault: Attempted to access page 0x00000000");
+        kpanic("Attempted to access page 0x00000000");
     }
 
     // Does page exist, but not present?
