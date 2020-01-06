@@ -88,6 +88,7 @@ void descriptor_tables_init()
  */
 void set_kernel_stack(uintptr_t stack_address)
 {
+	// TODO: Call this function
 	tss_entry.esp0 = stack_address;
 }
 
@@ -245,7 +246,7 @@ static void tss_set_gate(uint8_t index, struct task_state_segment_s *tss_entry, 
 
 	memset(tss_entry, 0, sizeof(struct task_state_segment_s));
 	tss_entry->ss0  = 0x10; // Kernel stack segment
-	tss_entry->esp0 = 0xDEADBEEF; // Should be set before task switching
+	tss_entry->esp0 = 0x00; // Should be set before task switching
 }
 
 /**

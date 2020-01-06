@@ -13,6 +13,8 @@
 task_switch:
 	// save edi to stack to be able to get its value below
 	push %edi
+    
+    // TODO: Disable interrupts
 
 	mov current_task, %edi	// address of current task_t structure
 
@@ -69,3 +71,4 @@ task_switch:
     mov 20(%esi), %esi
 
 	ret
+.size task_switch, . - task_switch

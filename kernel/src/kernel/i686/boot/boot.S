@@ -20,6 +20,8 @@ stack_top:
 .section .bss
 .align 4096
 
+.global kernel_page_directory
+.type kernel_page_directory, @object
 kernel_page_directory:
 	.skip 4096
 

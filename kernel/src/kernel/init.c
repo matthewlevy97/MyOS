@@ -19,17 +19,6 @@ extern uint32_t _kernel_end, _kernel_start, _kernel_offset;
 
 static uint32_t get_palloc_start_address(struct multiboot_tag_mmap *mb_mmap);
 
-void test()
-{
-	int x;
-	x = 0;
-	while(1) {
-		x++;
-		kprintf("TEST0: %d\n", x);
-		task_yield();
-	}
-}
-
 /**
  * @brief      Entry point into kernel for C code
  */
@@ -101,9 +90,7 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	}
 	palloc_init_address = get_palloc_start_address(mb_mmap);
 
-	/**
-	 * Stage 2 copies and loads information from the memory map into the heap
-	 */
+	/* Stage 2 copies and loads information from the memory map into the heap */
 	palloc_init2(palloc_init_address, mb_mmap);
 	kprintf(KPRINT_DEBUG "Page Allocator (Stage 2) Initialized\n");
 
@@ -120,22 +107,13 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	acpi_init(mb_acpi);
 	kprintf(KPRINT_DEBUG "ACPI Initialized\n");
 
+	task_init();
+	kprintf(KPRINT_DEBUG "Tasking Initialized\n");
+
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 
 	// Enable interrupts
 	irq_enable();
-
-	task_init();
-
-	task_t *t;
-	t = task_create(test, 0, paging_directory_address_physical(), 0);
-	current_task->next = t;
-	t->next = current_task;
-
-	while(1) {
-		task_switch(current_task->next);
-		kprintf("DONE\n");
-	}
 
 	while(1);
 	__builtin_unreachable ();

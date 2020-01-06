@@ -13,7 +13,7 @@ static void * create_new_task_stack();
 
 void task_init()
 {
-	current_task = task_create(NULL, 0, paging_directory_address_physical(), NO_CREATE_STACK);
+	current_task = task_create(NULL, 0, paging_directory_address(), NO_CREATE_STACK);
 }
 
 task_t *task_create(void (*main)(), uint32_t eflags, void *pagedir_physical, uint32_t creation_flags)

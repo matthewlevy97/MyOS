@@ -153,7 +153,6 @@ isr_common_stub:
 
 	mov %ds, %ax    // Lower 16-bits of eax = ds.
 	push %eax       // save the data segment descriptor
-
 	mov $0x10, %ax  // load the kernel data segment descriptor
 	mov %ax, %ds
 	mov %ax, %es
@@ -181,6 +180,7 @@ isr_common_stub:
 	mov %ax, %gs
 
 	popa
+	
 	add $8, %esp   // Clean up ISR number and error code
 	iret           // pops: CS, EIP, EFLAGS, SS, and ESP
 .size isr_common_stub, . - isr_common_stub

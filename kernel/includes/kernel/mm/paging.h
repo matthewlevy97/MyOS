@@ -29,13 +29,16 @@ enum page_mapping_flags {
 
 void paging_init();
 
-void * paging_directory_address_physical();
+void * paging_directory_address();
+
 void * paging_virtual_to_physical(void *virtual_address);
 
 void paging_map(void *virtual_address, uint32_t flags);
 void paging_map2(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags);
 
 void paging_unmap(void *virtual_address);
+
+void * paging_clone_directory(void *directory_physical);
 
 void paging_switch_directory(uint32_t * page_dir, uint32_t phys);
 
