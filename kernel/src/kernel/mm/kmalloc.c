@@ -4,237 +4,238 @@
 #include <string.h>
 #include <kpanic.h>
 
-static uint8_t * const heap_base_address = (uint8_t*)0xC0800000;
-static uint8_t *       heap_top_address;
+/**
+ * Simple buddy based memory allocator
+ * 
+ * Can use some improvement
+ * 	- Memory boundary regions to check for overflows
+ */
 
-static void *kmalloc_implementation(size_t size, size_t alignment);
-static struct block_meta *find_free_block(struct block_meta **last, size_t size, size_t alignment);
-static struct block_meta *expand_heap(struct block_meta* last, size_t size, size_t alignment);
+static struct buddy_metadata * const buddy_nodes = (struct buddy_metadata *)0xC0800000;
+static uint8_t *heap_base_address, *heap_top_address;
 
-static inline size_t can_split_align(struct block_meta *block, size_t size, size_t alignment);
-static inline struct block_meta *ptr_to_block(void *ptr);
-static inline void map_heap_page();
+static size_t free_node_from_offset(size_t ptr_offset, size_t current_size, size_t current_offset, size_t current_index);
+static size_t find_free_node(size_t desired_size, size_t current_size, size_t index);
+static size_t size_round_up(size_t size);
 
 /**
- * @brief      Initialize kmalloc and allocated the first few pages
+ * @brief      Initialize kmalloc and allocate the first few pages
  */
 void kmalloc_init()
 {
-	heap_top_address = heap_base_address;
-	for(int i = 0; i < PAGE_DIRECTORY_ENTRIES; i++) {
-		map_heap_page();
+	size_t buddy_size_paged;
+
+	if(BUDDY_TREE_SIZE >= PAGE_SIZE - 1) {
+		buddy_size_paged = PAGE_ALIGN(BUDDY_TREE_SIZE + 1);
+	} else {
+		buddy_size_paged = PAGE_SIZE;
+	}
+
+	heap_base_address = (uint8_t*)buddy_nodes + buddy_size_paged;
+
+	// Map a full page directory of entries (4 MiB)
+	heap_top_address = (uint8_t*)buddy_nodes;
+	for(int i = 0; i < PAGE_TABLE_ENTRIES; i++) {
+		paging_map(heap_top_address, PAGE_PRESENT | PAGE_READ_WRITE);
+		heap_top_address += PAGE_SIZE;
 	}
 }
 
 /**
- * @brief      Allocated memory in the kernel heap
+ * @brief      Allocate memory on the heap. Memory is "size" aligned
  *
  * @param[in]  size  The size of the region to allocate
  *
- * @return     Pointer to a region of the size to allocate, or NULL if it failed
+ * @return     Pointer to allocated region, or NULL on error
  */
-inline void *kmalloc(size_t size)
+void *kmalloc(size_t size)
 {
-	return kmalloc_implementation(size, sizeof(int));
+	size_t index, tree_level, block_number, block_size;
+	
+	// Align to 2^x size or MIN_ALLOCATION_SIZE
+	if(size < MIN_ALLOCATION_SIZE)
+		size = MIN_ALLOCATION_SIZE;
+	else
+		size = size_round_up(size);
+	
+	// Can't return memory larger than max heap size, so don't even try
+	if(size > HEAP_MAX_SIZE)
+		return NULL;
+
+	index = find_free_node(size, HEAP_MAX_SIZE, 0);
+	
+	if(index == BUDDY_NODE_NOT_FOUND)
+		return NULL;
+	
+	// Used for determining which block into block_size is being returned
+	block_number = index;
+	
+	// Get level of tree to determine block_size
+	tree_level = 0;
+	while(index) {
+		tree_level++;
+		index = (index-1) / 2;
+	}
+	
+	// Determine block_size and block_number of free node
+	block_number = block_number - (1 << tree_level) + 1;
+	block_size = HEAP_MAX_SIZE >> tree_level;
+
+	return heap_base_address + (block_size * block_number);
 }
 
 /**
- * @brief      Aligned kmalloc
+ * @brief      Allocates memory for an array of nmemb elements of size bytes each. Memory region set to zeros.
  *
- * @param[in]  size  The size (in bytes) to allocate
- * @param[in]  size  The byte count to allign on (ex. PAGE_SIZE)
+ * @param[in]  nmemb  The number of elements
+ * @param[in]  size   The size of each element
  *
- * @return     Pointer to allocated region, or NULL if failed
+ * @return     Pointer to allocated region, or NULL on error
  */
-inline void *kmalloc_a(size_t size, size_t alignment)
-{
-	return kmalloc_implementation(size, alignment);
-}
-
-void kfree(void *ptr)
-{
-	struct block_meta *block_ptr;
-
-	if (!ptr)
-		return;
-
-	// TODO: consider merging blocks once splitting blocks is implemented.
-	block_ptr = ptr_to_block(ptr);
-	ASSERT(block_ptr->free == 0);
-#ifdef MALLOC_USE_MAGIC
-	ASSERT(block_ptr->magic == MALLOC_MAGIC_KMALLOC ||
-		block_ptr->magic == MALLOC_MAGIC_EXPAND_HEAP ||
-		block_ptr->magic == MALLOC_MAGIC_ALIGN_SPLIT);
-	block_ptr->magic = MALLOC_MAGIC_FREE;
-#endif
-	block_ptr->free = 1;
-}
-
 void *kcalloc(size_t nmemb, size_t size)
 {
-	void *ptr;
-	
-	// Overflow check
-	ASSERT(nmemb * size >= nmemb);
+	void * ptr;
+	size_t combined_size;
 
-	ptr = kmalloc(nmemb * size);
-	memset(ptr, 0, nmemb * size);
+	combined_size = nmemb * size;
+	if(nmemb != combined_size / size) {
+		kpanic("Integer overflow on call to kcalloc!");
+	}
+
+	ptr = kmalloc(combined_size);
+	if(ptr == NULL) return NULL;
+
+	memset(ptr, 0, combined_size);
 
 	return ptr;
 }
 
+// TODO: Create krealloc() function
 void *krealloc(void *ptr, size_t size)
 {
-	struct block_meta *block_ptr;
-	void *new_ptr;
-
-	if(!ptr)
-		return kmalloc(size);
-
-	block_ptr = ptr_to_block(ptr);
-	if (block_ptr->size >= size) {
-		// We have enough space. Could free some once we implement split.
-		return ptr;
-	}
-
-	// Need to really realloc. Malloc new space and free old space.
-	// Then copy old data to new space.
-	new_ptr = kmalloc(size);
-	if (!new_ptr) {
-		return NULL;
-	}
-
-	memcpy(new_ptr, ptr, block_ptr->size);
-	kfree(ptr);
-
-	return new_ptr;
+	return NULL;
 }
 
-static void *kmalloc_implementation(size_t size, size_t alignment)
+/**
+ * @brief      Frees the memory region pointed to by ptr. Region must have been created by kmalloc, kcalloc, or krealloc.
+ *
+ * @param      ptr   The pointer to the memory region
+ */
+void kfree(void * ptr)
 {
-	struct block_meta *block, *last;
-
-	// Align to sizeof(int) boundary
-	if(size & (sizeof(int) - 1))
-		size += sizeof(int) - (size & (sizeof(int) - 1));
-
-	last = (struct block_meta*)heap_base_address;
-	block = find_free_block(&last, size, alignment);
-	if (!block) {
-		block = expand_heap(last, size, alignment);
-		if (!block) {
-			return NULL;
-		}
-	} else {
-		ASSERT(block->size >= size);
-		if(block->size - size >= sizeof(struct block_meta)) {
-			// Create split upper block (no point creating a new variable / name re-use)
-			last = (struct block_meta*)((uintptr_t)block + block->size - size);
-			last->free = 1;
-			last->next = block->next;
-			last->size = block->size - size - sizeof(struct block_meta);
-			ASSERT(last->size < block->size);
-#ifdef MALLOC_USE_MAGIC
-			last->magic = MALLOC_MAGIC_KMALLOC;
-#endif
-
-			block->size = size;
-			block->next = last;
-		}
-		block->free = 0;
-#ifdef MALLOC_USE_MAGIC
-		block->magic = MALLOC_MAGIC_KMALLOC;
-#endif
+	size_t heap_offset, node;
+	
+	// NULL check is implied
+	if((uintptr_t)ptr < (uintptr_t)heap_base_address || (uintptr_t)ptr > (uintptr_t)heap_top_address) return;
+	
+	// Get offset into start of heap region
+	heap_offset = ((uintptr_t)ptr - (uintptr_t)heap_base_address);
+	node = free_node_from_offset(heap_offset, HEAP_MAX_SIZE, 0, 0);
+	
+	if(node == BUDDY_NODE_NOT_FOUND) {
+		// XXX: Node not found, do we care???
 	}
-
-	return ++block;
 }
 
-// NOTE: Not thread safe
-static struct block_meta *find_free_block(struct block_meta **last, size_t size, size_t alignment)
+static size_t free_node_from_offset(size_t ptr_offset, size_t current_size, size_t current_offset, size_t current_index)
 {
-	struct block_meta *current;
-
-	current = *last;
-
-	while (current && !(current->free && current->size >= size && can_split_align(current, size, alignment))) {
-		*last = current;
-		current = current->next;
-	}
-
-	return current;
-}
-
-static struct block_meta *expand_heap(struct block_meta* last, size_t size, size_t alignment)
-{
-	struct block_meta *block, *block2;
-	uintptr_t bytes_until_alignment;
-
-	// Move to end of last block
-	block = (struct block_meta*)((uintptr_t)last + last->size + sizeof(struct block_meta));
-
-	// Append block to previous
-	last->next = block;
-
-	if((uintptr_t)block + size >= (uintptr_t)heap_top_address) {
-		kpanic("Out of heap memory");
+	size_t index;
+	
+	// Return if correct block found
+	if(buddy_nodes[current_index].in_use && !buddy_nodes[current_index].split) {
+		buddy_nodes[current_index].in_use = 0;
+		return current_index;
 	}
 	
-	// Is this block aligned correctly?
-	if(((uintptr_t)block & (alignment - 1)) == 0x00) {
-		block->size = size;
-		block->next = NULL;
-		block->free = 0;
-#ifdef MALLOC_USE_MAGIC
-		block->magic = MALLOC_MAGIC_EXPAND_HEAP;
-#endif
+	// Does this block have children?
+	current_size /= 2;
+	if(current_size < MIN_ALLOCATION_SIZE)
+		return BUDDY_NODE_NOT_FOUND;
+	
+	// Is it in left or right region
+	if(ptr_offset < current_offset + current_size) {
+		// Left side
+		index = free_node_from_offset(ptr_offset, current_size,
+			current_offset, BUDDY_LEFT_CHILD(current_index));
+		
+		// Can we coalesce the left and right blocks?
+		if(index != BUDDY_NODE_NOT_FOUND && !buddy_nodes[BUDDY_RIGHT_CHILD(current_index)].in_use) {
+			buddy_nodes[current_index].in_use = 0;
+			buddy_nodes[current_index].split  = 0;
+		}
 	} else {
-		// We need to create 2 blocks.....
-		// How many bytes until next alignment
-		bytes_until_alignment = alignment - ((uintptr_t)block & (alignment - 1));
+		// Right side
+		index = free_node_from_offset(ptr_offset, current_size,
+			current_offset + current_size, BUDDY_RIGHT_CHILD(current_index));
 		
-		// Go to next alignment if not enough space
-		if(bytes_until_alignment < sizeof(struct block_meta))
-			bytes_until_alignment += alignment;
+		// Can we coalesce the left and right blocks?
+		if(index != BUDDY_NODE_NOT_FOUND && !buddy_nodes[BUDDY_LEFT_CHILD(current_index)].in_use) {
+			buddy_nodes[current_index].in_use = 0;
+			buddy_nodes[current_index].split  = 0;
+		}
+	}
+	
+	return index;
+}
 
-		block2 = (struct block_meta*)((uintptr_t)block + bytes_until_alignment - sizeof(struct block_meta));
-		block2->size = size;
-		block2->next = NULL;
-#ifdef MALLOC_USE_MAGIC
-		block2->magic = MALLOC_MAGIC_EXPAND_HEAP;
-#endif
-		
-		block->size = (uintptr_t)block2 - (uintptr_t)block - sizeof(struct block_meta);
-		block->next = block2;
-		block->free = 1;
-#ifdef MALLOC_USE_MAGIC
-		block->magic = MALLOC_MAGIC_EXPAND_HEAP;
-#endif
+static size_t find_free_node(size_t desired_size, size_t current_size, size_t index)
+{
+	size_t ret;
 
-		block = block2;
+	// Prevent looking outside buffer for the tree
+	ASSERT(index < BUDDY_TREE_SIZE);
+	
+	// Block is allocated and not be split
+	if(buddy_nodes[index].in_use && !(buddy_nodes[index].split))
+		goto not_found;
+	
+	// Check if current block works
+	if(!(buddy_nodes[index].in_use) && desired_size == current_size) {
+		buddy_nodes[index].in_use = 1;
+		buddy_nodes[index].split  = 0; // XXX: Is this needed?
+		ret = index;
+		goto successful_find;
+	}
+	
+	// Ensure we haven't gone smaller than requested
+	current_size /= 2;
+	if(current_size < desired_size || current_size < MIN_ALLOCATION_SIZE)
+		goto not_found;
+	
+	// Recurse left side
+	ret = find_free_node(desired_size, current_size, BUDDY_LEFT_CHILD(index));
+	if(ret != BUDDY_NODE_NOT_FOUND) {
+		buddy_nodes[index].in_use = 1;
+		buddy_nodes[index].split = 1;
+		goto successful_find;
+	}
+	
+	// Recurse left side
+	ret = find_free_node(desired_size, current_size, BUDDY_RIGHT_CHILD(index));
+	if(ret != BUDDY_NODE_NOT_FOUND) {
+		buddy_nodes[index].in_use = 1;
+		buddy_nodes[index].split = 1;
+		goto successful_find;
 	}
 
-	return block;
+not_found:
+	return BUDDY_NODE_NOT_FOUND;
+successful_find:
+	return ret;
 }
 
-static inline size_t can_split_align(struct block_meta *block, size_t size, size_t alignment)
+static size_t size_round_up(size_t size)
 {
-	uintptr_t block_int;
-	block_int = (uintptr_t)block;
+	size_t count;
 	
-	return ((block_int + sizeof(struct block_meta)) & (alignment - 1)) == 0 &&
-		block->size >= size;
-}
-
-static inline struct block_meta *ptr_to_block(void *ptr)
-{
-	return (struct block_meta*)ptr - 1;
-}
-
-static inline void map_heap_page()
-{
-	paging_map(heap_top_address,
-		PAGE_PRESENT | PAGE_READ_WRITE);
-
-	heap_top_address += PAGE_SIZE;
+	count = 0;
+	if(size && !(size & (size-1)))
+		return size;
+	
+	while(size) {
+		size >>= 1;
+		count += 1;
+	}
+	
+	return 1 << count;
 }

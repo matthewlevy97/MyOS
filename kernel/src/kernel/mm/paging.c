@@ -81,7 +81,7 @@ void * paging_clone_directory(void *directory_virtual)
 {
     uint32_t *dst, *src;
 
-    dst = (uint32_t*)kmalloc_a(PAGE_SIZE, PAGE_SIZE);
+    dst = (uint32_t*)kmalloc(PAGE_SIZE);
     src = (uint32_t*)directory_virtual;
 
     memcpy(dst, src, PAGE_SIZE);
@@ -123,7 +123,7 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
     
     if((paging_directory[pdindex]) == 0x00) {
     	// Create a new page table entry and update page directory
-    	pt = kmalloc_a(PAGE_SIZE, PAGE_SIZE);
+    	pt = kmalloc(PAGE_SIZE);
     	if(!pt) {
     		kpanic("Failed to malloc region to create page table!");
     	}
