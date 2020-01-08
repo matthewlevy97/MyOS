@@ -9,17 +9,23 @@ task_t *current_task;
  * 	Disable interrupts in here
  */
 
-static void * create_new_task_stack();
+static void * create_new_task_stack(void *pagedir_physical);
 
 void task_init()
 {
-	current_task = task_create(NULL, 0, paging_directory_address(), NO_CREATE_STACK);
+	current_task = task_create(NULL, 0, paging_virtual_to_physical(paging_directory_address()), NO_CREATE_STACK);
+}
+
+task_t *get_active_task()
+{
+	return current_task;
 }
 
 task_t *task_create(void (*main)(), uint32_t eflags, void *pagedir_physical, uint32_t creation_flags)
 {
 	task_t *task;
 	uint32_t *stack_ptr;
+	void *current_page_dir;
 
 	task = (task_t*)kmalloc(sizeof(task_t));
 
@@ -38,10 +44,15 @@ task_t *task_create(void (*main)(), uint32_t eflags, void *pagedir_physical, uin
     if(creation_flags & NO_CREATE_STACK) {
     	task->registers.esp = 0;
     } else {
-    	stack_ptr = create_new_task_stack();
+    	current_page_dir = paging_virtual_to_physical(paging_directory_address());
+		paging_switch_directory(pagedir_physical, 1);
+
+    	stack_ptr = create_new_task_stack(pagedir_physical);
     	*stack_ptr = (uintptr_t)main; // eip
 
     	task->registers.esp = (uint32_t)stack_ptr;
+
+    	paging_switch_directory(current_page_dir, 1);
     }
 
     task->next = NULL;
@@ -51,14 +62,15 @@ task_t *task_create(void (*main)(), uint32_t eflags, void *pagedir_physical, uin
 
 void task_yield()
 {
-	task_switch(current_task->next);
+	if(current_task->next)
+		task_switch(current_task->next);
 }
 
 /*
  * TODO: Create new page directory with new kernel stack
  * TODO: If not in kernel -> local stack, and local heap; else, local stack = kernel stack, no create local heap
 */
-static inline void * create_new_task_stack()
+static inline void * create_new_task_stack(void *pagedir_physical)
 {
 	paging_map((void*)PAGE_ALIGN(TASK_STACK_BASE_ADDRESS), PAGE_PRESENT | PAGE_READ_WRITE);
 

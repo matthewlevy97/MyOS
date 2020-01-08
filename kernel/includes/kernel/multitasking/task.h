@@ -25,5 +25,4 @@ void task_init();
 task_t *task_create(void (*main)(), uint32_t eflags, void *pagedir_physical, uint32_t creation_flags);
 
 void task_yield();
-
 void task_switch(task_t *next_task);

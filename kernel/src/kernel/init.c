@@ -97,8 +97,6 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 
-	kprintf("DONE\n");
-
 	while(1);
 	__builtin_unreachable();
 }

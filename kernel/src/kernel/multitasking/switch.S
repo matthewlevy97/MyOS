@@ -9,6 +9,10 @@
 .global task_switch
 .type task_switch, @function
 
+/*
+TODO: Not saving EIP, or EFLAGS
+*/
+
 /* void task_switch(task_t *next_task); */
 task_switch:
 	// save edi to stack to be able to get its value below
@@ -58,7 +62,7 @@ task_switch:
     mov %eax, %cr3		// Only reload if different
 
 .no_reload_page_dir:
-	// Save registers
+	// Reload registers
 	mov 0(%esi), %eax
 	mov 4(%esi), %ebx
 	mov 8(%esi), %ecx
