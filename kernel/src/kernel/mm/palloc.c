@@ -36,7 +36,7 @@ void palloc_init(uintptr_t low_address)
 	allocated_pages_bitmap = initial_palloc_bitmap;
 	bitmap_size = sizeof(initial_palloc_bitmap);
 
-	// Set base address.
+	// Set base address. Will not change between init stage 1 and stage 2.
 	base_address = PAGE_ALIGN(low_address) + PAGE_SIZE;
 }
 
@@ -68,13 +68,10 @@ void palloc_init2(uintptr_t low_address, struct multiboot_tag_mmap *mb_mmap)
 				bitmap_size += (PAGE_ALIGN(low_address) + mmap_entry.len) / PAGE_SIZE;
 			else
 				bitmap_size += (mmap_entry.addr + mmap_entry.len) / PAGE_SIZE;
-			break;
 		}
 	}
 
-	base_address = PAGE_ALIGN(low_address) + PAGE_SIZE;
 	allocated_pages_bitmap = bitmap_create(bitmap_size);
-	bitmap_copy(allocated_pages_bitmap, initial_palloc_bitmap, bitmap_size);
 
 	mmap_entries = kmalloc(sizeof(struct multiboot_mmap_entry) * number_mmap_entries);
 	if(mmap_entries == NULL) {
@@ -82,6 +79,12 @@ void palloc_init2(uintptr_t low_address, struct multiboot_tag_mmap *mb_mmap)
 	}
 
 	memcpy(mmap_entries, mb_mmap->entries, sizeof(struct multiboot_mmap_entry) * number_mmap_entries);
+
+	// Copy over old bitmap data to new bitmap
+	for(uint32_t i = 0; i < sizeof(initial_palloc_bitmap) - 1; i++) {
+		if(bitmap_get(initial_palloc_bitmap, sizeof(initial_palloc_bitmap), i) == 1)
+			palloc_mark_inuse(PAGE_SIZE * i + base_address);
+	}
 }
 
 /**
@@ -93,15 +96,19 @@ uintptr_t palloc_physical()
 {
 	uint32_t index;
 	uintptr_t address;
-	
+
 	index = bitmap_get_first_clear(allocated_pages_bitmap, bitmap_size);
 	if(index >= bitmap_size) {
 		// Could not find any clear bits in the bitmap
 		goto fail;
 	}
 
+	// Mark page as allocated
 	bitmap_set(allocated_pages_bitmap, bitmap_size, index);
 
+	// XXX: Should be end of thread un-safe region
+
+	// Just need to find the base for this offset
 	address = index * PAGE_SIZE;
 
 	/**
@@ -118,8 +125,14 @@ uintptr_t palloc_physical()
 			continue;
 
 		if(index > mmap_entries[i].len / PAGE_SIZE) {
+			// Not in this region, subtract region pages from index
 			index -= mmap_entries[i].len / PAGE_SIZE;
+		} else if(mmap_entries[i].addr < base_address) {
+			// To prevent using addresses below base_address
+			address += base_address;
+			goto success;
 		} else {
+			// Use address is above base_address
 			address += mmap_entries[i].addr;
 			goto success;
 		}
@@ -181,8 +194,11 @@ static uint32_t find_index_by_address(uintptr_t address)
 		if(mmap_entries[i].type != MULTIBOOT_MEMORY_AVAILABLE || mmap_entries[i].addr + mmap_entries[i].len < base_address)
 			continue;
 
-		if(address >= mmap_entries[i].len) {
+		if(address >= mmap_entries[i].addr + mmap_entries[i].len) {
 			index += mmap_entries[i].len / PAGE_SIZE;
+		} else {
+			index += (address - mmap_entries[i].addr) / PAGE_SIZE;
+			break;
 		}
 	}
 

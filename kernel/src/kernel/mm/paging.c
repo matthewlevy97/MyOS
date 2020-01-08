@@ -32,9 +32,9 @@ void paging_init()
 }
 
 /**
- * @brief      Get the current paging directory address
+ * @brief      Get the current paging directory (virtual) address
  *
- * @return     Pointer to the physical address of the paging directory
+ * @return     Pointer to the virtual address of the paging directory
  */
 void * paging_directory_address()
 {
@@ -117,7 +117,7 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
 
     if(virtual_address == 0x00)
         return;
-
+    
     pdindex = (uint32_t)virtual_address >> 22;
     ptindex = ((uint32_t)virtual_address >> 12) & 0x03FF;
     
@@ -135,20 +135,19 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
 
     	paging_directory[pdindex] = ((uint32_t)pt & ~0xFFF) | PAGE_PRESENT | PAGE_READ_WRITE;
     }
-
+    
     pt = (uint32_t*)(REFLECTED_PAGE_TABLE_BASE_ADDRESS + PAGE_SIZE * pdindex);
-
+    
     if(pt == 0x00) {
     	// TODO: Page already exists, what do we do now???
     	kprintf(KPRINT_DEBUG "Page already exists! (Physical: 0x%x, Virtual: 0x%x)\n",
     		(uintptr_t)physical_address, (uintptr_t)virtual_address);
     	return;
     }
-    
+
     pt_entry = page_flags & 0xFFF;
     pt_entry |= (uint32_t)physical_address; 
     pt[ptindex] = pt_entry;
-    
     /**
      * Wipe page contents
     */
@@ -159,8 +158,8 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
      * Need to flush TLB changes
      * XXX: Is this needed actually?
      */
-    if(mapping_flags & MAPPING_FLUSH_CHANGES)
-        paging_switch_directory(paging_directory, 0);
+    //if(mapping_flags & MAPPING_FLUSH_CHANGES)
+    paging_switch_directory(paging_directory, 0);
 }
 
 /**
@@ -192,6 +191,12 @@ void paging_unmap(void *virtual_address)
     palloc_release((uintptr_t)physical_address);
 }
 
+/**
+ * @brief      Switch out the current page directory
+ *
+ * @param      page_dir  The page directory's address
+ * @param[in]  phys      Is the page directory's address physical? (boolean)
+ */
 void paging_switch_directory(uint32_t * page_dir, uint32_t phys)
 {
     if(!phys)
@@ -213,6 +218,7 @@ void page_fault_handler(struct isr_arguments *args)
     // Does page exist, but not present?
     if(args->error_code & 0x1) {
         // Page protection violation
+        // TODO: Make page present
         kprintf("Need to make present\n");
     }
 
@@ -224,8 +230,7 @@ void page_fault_handler(struct isr_arguments *args)
     
     // Load page
     // TODO: Determine which permissions/flags to set for the page
-    paging_map((void*)(args->cr2),
-        PAGE_PRESENT | PAGE_READ_WRITE);
+    paging_map((void*)(args->cr2), PAGE_PRESENT | PAGE_READ_WRITE);
 
     if(args->error_code & 0x4) {
         // When set, the page fault was caused while CPL = 3.

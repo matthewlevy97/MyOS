@@ -71,8 +71,6 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	kmalloc_init();
 	kprintf(KPRINT_DEBUG "KMalloc Initialized\n");
 
-	palloc_init_address = get_palloc_start_address(mb_mmap);
-
 	/* Stage 2 copies and loads information from the memory map into the heap */
 	palloc_init2(palloc_init_address, mb_mmap);
 	kprintf(KPRINT_DEBUG "Page Allocator (Stage 2) Initialized\n");
@@ -100,6 +98,8 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	irq_enable();
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
+
+	kprintf("DONE\n");
 
 	while(1);
 	__builtin_unreachable();

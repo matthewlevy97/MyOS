@@ -7,6 +7,9 @@ kpanic_stack_trace:
 
 .section .text
 
+.extern irq_disable
+.type irq_disable, @function
+
 .extern kprintf
 .type kprintf, @function
 
@@ -17,6 +20,8 @@ kpanic_stack_trace:
 .type kpanic_implementation, @function
 
 kpanic_implementation:
+	call irq_disable
+	
 	// Display error message
 	push $kpanic_string
 	call kprintf
@@ -38,7 +43,6 @@ kpanic_implementation:
 	cmp $10, %edi // Only print 4 lines
 	jbe 1b
 
-	cli
 2:	hlt
 	jmp 2b
 .size kpanic_implementation_size, . - kpanic_implementation
