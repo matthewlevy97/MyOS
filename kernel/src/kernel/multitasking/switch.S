@@ -1,26 +1,27 @@
 .section .text
 
-.global current_task
-.type current_task, @object
+.global current_process
+.type current_process, @object
 
 .global tss_entry
 .type tss_entry, @object
 
-.global task_switch
-.type task_switch, @function
+.global process_switch
+.type process_switch, @function
 
 /*
-TODO: Not saving EIP, or EFLAGS
+TODO: Not saving EFLAGS on switch
 */
 
-/* void task_switch(task_t *next_task); */
-task_switch:
+/* void process_switch(struct process_control_block *next_process); */
+process_switch:
 	// save edi to stack to be able to get its value below
 	push %edi
     
-    // TODO: Disable interrupts
+    // Disable interrupts
+    cli
 
-	mov current_task, %edi	// address of current task_t structure
+	mov current_process, %edi	// address of current process_control_block structure
 
 	// Save registers
 	mov %eax, 0(%edi)
@@ -32,27 +33,32 @@ task_switch:
 	mov %eax, 16(%edi)
 	mov %esi, 20(%edi)
 
-	// remove edi from stack
-	// must be done before esp is saved
+	// Remove edi from stack
+	// Must be done before esp is saved
+    // Value is just ignored as it is already saved
 	pop %esi
+
+    // Get return address
+    mov (%esp), %eax
+    mov %eax, 32(%edi)
 
     mov %esp, 24(%edi)
     mov %ebp, 28(%edi)
 
-    // esi = next_task parameter
+    // esi = next_process parameter
     mov 4(%esp), %esi
-    // Set current_task to next_task
-    mov %esi, current_task
+    // Set current_process to next_process
+    mov %esi, current_process
 
     // Set new stack address
     mov 24(%esi), %esp
 
-    // Load task state information
+    // Load process state information
     mov 44(%esi), %ebx
     mov $tss_entry, %edi
     mov %ebx, 4(%edi)	// set ESP0 field in TSS
 
-    // Get next task page directory address
+    // Get next process page directory address
     mov 40(%esi), %eax
 
     // Check if CR3 needed to be updated
@@ -63,16 +69,23 @@ task_switch:
 
 .no_reload_page_dir:
 	// Reload registers
-	mov 0(%esi), %eax
-	mov 4(%esi), %ebx
-	mov 8(%esi), %ecx
-	mov 12(%esi), %edx
-
     mov 24(%esi), %esp
     mov 28(%esi), %ebp
+
+    // Set return address
+    mov 32(%esi), %eax
+    mov %eax, (%esp)
+
+    mov 0(%esi), %eax
+    mov 4(%esi), %ebx
+    mov 8(%esi), %ecx
+    mov 12(%esi), %edx
 
     mov 16(%esi), %edi
     mov 20(%esi), %esi
 
+    // Re-enable interrupts
+    sti
+
 	ret
-.size task_switch, . - task_switch
+.size process_switch, . - process_switch

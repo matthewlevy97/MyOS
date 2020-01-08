@@ -72,25 +72,19 @@ void palloc_init2(uintptr_t low_address, struct multiboot_tag_mmap *mb_mmap)
 	}
 
 	allocated_pages_bitmap = bitmap_create(bitmap_size);
+	memcpy(allocated_pages_bitmap, initial_palloc_bitmap, sizeof(initial_palloc_bitmap));
 
 	mmap_entries = kmalloc(sizeof(struct multiboot_mmap_entry) * number_mmap_entries);
 	if(mmap_entries == NULL) {
 		kpanic("Could not allocate space for memory map");
 	}
-
 	memcpy(mmap_entries, mb_mmap->entries, sizeof(struct multiboot_mmap_entry) * number_mmap_entries);
-
-	// Copy over old bitmap data to new bitmap
-	for(uint32_t i = 0; i < sizeof(initial_palloc_bitmap) - 1; i++) {
-		if(bitmap_get(initial_palloc_bitmap, sizeof(initial_palloc_bitmap), i) == 1)
-			palloc_mark_inuse(PAGE_SIZE * i + base_address);
-	}
 }
 
 /**
  * @brief      Returns the physical address of an un-used page
  *
- * @return     Physical address of valid, unused page
+ * @return     Physical address of valid, unused page. NULL on failure.
  */
 uintptr_t palloc_physical()
 {

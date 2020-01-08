@@ -43,6 +43,11 @@ kpanic_implementation:
 	cmp $10, %edi // Only print 4 lines
 	jbe 1b
 
-2:	hlt
-	jmp 2b
+	/*
+	Dump process information
+	*/
+2:
+
+3:	hlt
+	jmp 3b
 .size kpanic_implementation_size, . - kpanic_implementation

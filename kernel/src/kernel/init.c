@@ -13,7 +13,7 @@
 #include <mm/palloc.h>
 #include <multiboot/multiboot2.h>
 #include <multiboot/multiboot_parser.h>
-#include <multitasking/task.h>
+#include <multitasking/process.h>
 
 extern uint32_t _kernel_end, _kernel_start, _kernel_offset;
 
@@ -86,11 +86,8 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	acpi_init(mb_acpi);
 	kprintf(KPRINT_DEBUG "ACPI Initialized\n");
 
-	task_init();
-	kprintf(KPRINT_DEBUG "Tasking Initialized\n");
-
-	// Release mark on multiboot header page
-	palloc_release(PAGE_ALIGN((uint32_t)paging_virtual_to_physical(mb_header)));
+	process_init();
+	kprintf(KPRINT_DEBUG "Multitasking Initialized\n");
 
 	// Enable interrupts
 	irq_enable();

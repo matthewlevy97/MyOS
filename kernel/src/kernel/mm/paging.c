@@ -15,9 +15,6 @@
  * 	page_directory recursively mapped to 0xFFFFF000
 */
 
-static uintptr_t *const paging_directory = (uintptr_t*)0xFFFFF000;
-static uintptr_t paging_directory_physical_address;
-
 static void map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags);
 static inline void native_flush_tlb_single(uintptr_t addr);
 
@@ -25,9 +22,7 @@ extern uintptr_t * kernel_page_directory;
 
 void paging_init()
 {
-    paging_directory_physical_address = paging_virtual_to_physical(&kernel_page_directory);
-
-	kprintf(KPRINT_DEBUG "Paging Directory Address: 0x%x\n", paging_directory_physical_address);
+	kprintf(KPRINT_DEBUG "Paging Directory Address: 0x%x\n", paging_virtual_to_physical(&kernel_page_directory));
     install_interrupt_handler(14, page_fault_handler);
 }
 
@@ -38,7 +33,7 @@ void paging_init()
  */
 void * paging_directory_address()
 {
-    return paging_directory;
+    return (void*)REFLECTED_PAGE_DIRECTORY_ADDRESS;
 }
 
 /**
@@ -50,8 +45,10 @@ void * paging_directory_address()
  */
 void * paging_virtual_to_physical(void *virtual_address)
 {
-	uint32_t pdindex, ptindex;
-	uint32_t *pt;
+    uintptr_t *paging_directory, pdindex, ptindex;
+	uintptr_t *pt;
+
+    paging_directory = (uintptr_t*)REFLECTED_PAGE_DIRECTORY_ADDRESS;
 
 	pdindex = (uint32_t)virtual_address >> 22;
     ptindex = (uint32_t)virtual_address >> 12 & 0x03FF;
@@ -61,13 +58,13 @@ void * paging_virtual_to_physical(void *virtual_address)
     	return NULL;
     }
 
-    pt = (uint32_t*)(REFLECTED_PAGE_TABLE_BASE_ADDRESS + PAGE_SIZE * pdindex);
+    pt = (uintptr_t*)(REFLECTED_PAGE_TABLE_BASE_ADDRESS + PAGE_SIZE * pdindex);
     if(pt == 0x00) {
     	kprintf(KPRINT_ERROR "Page does not exist/loaded\n");
     	return NULL;
     }
 	
-    return (void *)((pt[ptindex] & ~0xFFF) + ((uint32_t)virtual_address & 0xFFF));
+    return (void *)((pt[ptindex] & ~0xFFF) + ((uintptr_t)virtual_address & 0xFFF));
 }
 
 /**
@@ -77,29 +74,89 @@ void * paging_virtual_to_physical(void *virtual_address)
  *
  * @return     Clone of the page directory (virtual address)
  */
-void * paging_clone_directory(void *directory_virtual)
+void * paging_clone_directory(void *directory_virtual, uint32_t clone_flags)
 {
-    uint32_t *dst, *src;
+    uintptr_t *dst, *src;
+    uint32_t entry;
 
-    dst = (uint32_t*)kmalloc(PAGE_SIZE);
-    src = (uint32_t*)directory_virtual;
+    dst = (uintptr_t*)kmalloc(PAGE_SIZE);
+    src = (uintptr_t*)directory_virtual;
+    
+    // Start entry to copy over from passed page directory
+    entry = 0;
 
-    memcpy(dst, src, PAGE_SIZE);
-    dst[1023] = (uintptr_t)paging_virtual_to_physical(dst) | PAGE_PRESENT | PAGE_READ_WRITE;
+    if(clone_flags & CLONE_KERNEL_ONLY) {
+        // TODO: Don't leave 768 as a number, define that bitch
+        entry = 768;
+    }
+
+    // Copy entries
+    for(; entry < PAGE_DIRECTORY_ENTRIES - 1; entry++)
+        dst[entry] = src[entry];
+
+    // Setup reflection
+    dst[REFLECTED_PAGE_DIRECTORY_ENTRY] = (uintptr_t)paging_virtual_to_physical(dst);
+    dst[REFLECTED_PAGE_DIRECTORY_ENTRY] |= PAGE_PRESENT | PAGE_READ_WRITE;
 
     return (void*)dst;
 }
 
-inline void paging_map(void *virtual_address, uint32_t flags)
+void paging_create_page_table(void *virtual_address, uint32_t page_flags, uint32_t *paging_directory_virtual)
+{
+    uint32_t pdindex, ptindex, physical_address;
+    uint32_t *pt, *pt_physical, pt_entry;
+
+    physical_address = (uint32_t)palloc_physical();
+    if(physical_address == 0x00)
+        return;
+
+    pdindex = (uint32_t)virtual_address >> 22;
+    ptindex = ((uint32_t)virtual_address >> 12) & 0x3FF;
+
+    // XXX: Page table entry already exists
+    if(paging_directory_virtual[pdindex] != 0x00)
+        return;
+
+    pt = kmalloc(PAGE_SIZE);
+    if(!pt)
+        kpanic("Failed to malloc region to create page table!");
+
+    pt_physical = paging_virtual_to_physical(pt);
+    if(!pt_physical)
+        kpanic("Failed to get physical address of new page table!");
+    paging_directory_virtual[pdindex] = ((uint32_t)pt_physical & ~0xFFF) | PAGE_PRESENT | PAGE_READ_WRITE;
+
+    pt_entry = page_flags & 0xFFF;
+    pt_entry |= physical_address; 
+    pt[ptindex] = pt_entry;
+}
+
+/**
+ * @brief      Map a virtual address into memory
+ *
+ * @param      virtual_address   The virtual address to map the page to
+ * @param[in]  page_flags        The flags for the page when it is created
+ * @param[in]  mapping_flags     The flags for how to map the page
+ */
+inline void paging_map(void *virtual_address, uint32_t flags, uint32_t mapping_flags)
 {
     void * physical_address;
     
     physical_address = (void*)palloc_physical();
     if(physical_address == 0x00)
         return;
-
-    map_implementation(physical_address, virtual_address, flags, MAPPING_WIPE_PAGE | MAPPING_FLUSH_CHANGES);
+    
+    map_implementation(physical_address, virtual_address, flags, mapping_flags);
 }
+
+/**
+ * @brief      Map a provided physical page to a provided virtual address
+ *
+ * @param      physical_address  The physical address of the page to use. Will mark the page in-use.
+ * @param      virtual_address   The virtual address to map the page to
+ * @param[in]  page_flags        The flags for the page when it is created
+ * @param[in]  mapping_flags     The flags for how to map the page
+ */
 inline void paging_map2(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags)
 {
     if(physical_address == 0x00)
@@ -112,26 +169,26 @@ inline void paging_map2(void *physical_address, void *virtual_address, uint32_t 
 
 static void map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags)
 {
-	uint32_t pdindex, ptindex;
+	uint32_t *paging_directory, pdindex, ptindex;
 	uint32_t *pt, pt_entry;
+    
+    paging_directory = (uint32_t*)REFLECTED_PAGE_DIRECTORY_ADDRESS;
 
     if(virtual_address == 0x00)
         return;
     
     pdindex = (uint32_t)virtual_address >> 22;
-    ptindex = ((uint32_t)virtual_address >> 12) & 0x03FF;
+    ptindex = ((uint32_t)virtual_address >> 12) & 0x3FF;
     
     if((paging_directory[pdindex]) == 0x00) {
     	// Create a new page table entry and update page directory
     	pt = kmalloc(PAGE_SIZE);
-    	if(!pt) {
+    	if(!pt)
     		kpanic("Failed to malloc region to create page table!");
-    	}
     	
     	pt = paging_virtual_to_physical(pt);
-    	if(!pt) {
+    	if(!pt)
     		kpanic("Failed to get physical address of new page table!");
-    	}
 
     	paging_directory[pdindex] = ((uint32_t)pt & ~0xFFF) | PAGE_PRESENT | PAGE_READ_WRITE;
     }
@@ -148,6 +205,7 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
     pt_entry = page_flags & 0xFFF;
     pt_entry |= (uint32_t)physical_address; 
     pt[ptindex] = pt_entry;
+
     /**
      * Wipe page contents
     */
@@ -155,11 +213,10 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
         memset(virtual_address, 0, PAGE_SIZE);
 
     /**
-     * Need to flush TLB changes
-     * XXX: Is this needed actually?
+     * Switch to the page table, flushing changes
      */
-    //if(mapping_flags & MAPPING_FLUSH_CHANGES)
-    paging_switch_directory(paging_directory, 0);
+    if(mapping_flags & MAPPING_FLUSH_CHANGES)
+        paging_switch_directory(paging_directory, 0);
 }
 
 /**
@@ -169,8 +226,10 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
  */
 void paging_unmap(void *virtual_address)
 {
-    uint32_t pdindex, ptindex, *pt;
+    uint32_t *paging_directory, pdindex, ptindex, *pt;
     uintptr_t physical_address;
+
+    paging_directory = (uintptr_t*)REFLECTED_PAGE_DIRECTORY_ADDRESS;
 
     pdindex = (uint32_t)virtual_address >> 22;
     ptindex = ((uint32_t)virtual_address >> 12) & 0x03FF;
@@ -188,7 +247,8 @@ void paging_unmap(void *virtual_address)
     physical_address = pt[ptindex] & ~0xFFF;
     pt[ptindex] = 0;
 
-    palloc_release((uintptr_t)physical_address);
+    // XXX: Might need reference counts when a page is mapped into multiple virtual / page directories
+    //palloc_release((uintptr_t)physical_address);
 }
 
 /**
@@ -203,18 +263,23 @@ void paging_switch_directory(uint32_t * page_dir, uint32_t phys)
         page_dir = paging_virtual_to_physical(page_dir);
 
     if(page_dir == 0x00)
-        kpanic("Trying to switch to page table at address 0x00!");
+        kpanic("Trying to switch to page table at address 0x00000000!");
 
-    paging_directory_physical_address = (uintptr_t)page_dir;
     asm volatile("mov %0, %%cr3" :: "r"((uint32_t)page_dir));
 }
 
 void page_fault_handler(struct isr_arguments *args)
 {
-    if(args->cr2 == 0x00) {
+    uintptr_t accessed_page;
+
+    // Move to page boundary
+    accessed_page = PAGE_ALIGN((uintptr_t)args->cr2);
+
+    if(accessed_page == 0x00) {
+        kprintf("Page Fault at Address: 0x%x\n", args->eip);
         kpanic("Attempted to access page 0x00000000");
     }
-
+    
     // Does page exist, but not present?
     if(args->error_code & 0x1) {
         // Page protection violation
@@ -230,7 +295,7 @@ void page_fault_handler(struct isr_arguments *args)
     
     // Load page
     // TODO: Determine which permissions/flags to set for the page
-    paging_map((void*)(args->cr2), PAGE_PRESENT | PAGE_READ_WRITE);
+    paging_map((void*)(accessed_page), PAGE_PRESENT | PAGE_READ_WRITE, MAPPING_WIPE_PAGE | MAPPING_FLUSH_CHANGES);
 
     if(args->error_code & 0x4) {
         // When set, the page fault was caused while CPL = 3.

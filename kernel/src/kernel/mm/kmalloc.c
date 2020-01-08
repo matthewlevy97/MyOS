@@ -37,9 +37,12 @@ void kmalloc_init()
 	// Map a full page directory of entries (4 MiB)
 	heap_top_address = (uint8_t*)buddy_nodes;
 	for(size_t i = 0; i < PAGE_TABLE_ENTRIES; i++) {
-		paging_map(heap_top_address, PAGE_PRESENT | PAGE_READ_WRITE);
+		paging_map(heap_top_address, PAGE_PRESENT | PAGE_READ_WRITE, MAPPING_WIPE_PAGE);
 		heap_top_address += PAGE_SIZE;
 	}
+
+	// Flush changes
+	paging_switch_directory(paging_directory_address(), 0);
 }
 
 /**

@@ -11,6 +11,8 @@
 #define PAGE_TABLE_ENTRIES 1024
 
 #define REFLECTED_PAGE_TABLE_BASE_ADDRESS 0xFFC00000
+#define REFLECTED_PAGE_DIRECTORY_ADDRESS  0xFFFFF000
+#define REFLECTED_PAGE_DIRECTORY_ENTRY    1023
 
 enum page_entry_flags {
 	PAGE_PRESENT        = 0x01,
@@ -29,18 +31,23 @@ enum page_mapping_flags {
 	MAPPING_FLUSH_CHANGES = 0x02,
 };
 
+enum page_clone_flags {
+	CLONE_KERNEL_ONLY     = 0x01,
+};
+
 void paging_init();
 
 void * paging_directory_address();
 
 void * paging_virtual_to_physical(void *virtual_address);
 
-void paging_map(void *virtual_address, uint32_t flags);
+void paging_map(void *virtual_address, uint32_t flags, uint32_t mapping_flags);
 void paging_map2(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags);
 
 void paging_unmap(void *virtual_address);
 
-void * paging_clone_directory(void *directory_physical);
+void * paging_clone_directory(void *directory_physical, uint32_t clone_flags);
+void paging_create_page_table(void *virtual_address, uint32_t page_flags, uint32_t *paging_directory_virtual);
 
 void paging_switch_directory(uint32_t * page_dir, uint32_t phys);
 
