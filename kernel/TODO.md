@@ -6,10 +6,6 @@
 	- Implement page fault handler
 		- Lazy loading of non-present pages
 - Implement heap storage
-	- kmalloc
-		- combine neighboring free'd blocks
-	- slab storage
-		- look at Linux SLUB allocator
 	- expand heap size
 - Implement filesystem
 	- abstract code between low level and high level FS functionality (VFS)
@@ -27,5 +23,4 @@
 - Setup systemcalls
 - Multitasking
 	- Task schedule for processes
-	- Setup TSS
 - Jump to usermode->kernel->usermode
