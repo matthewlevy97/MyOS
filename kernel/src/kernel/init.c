@@ -28,8 +28,6 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	struct multiboot_tag_mmap *mb_mmap;
 	struct multiboot_tag_new_acpi *mb_acpi;
 
-	void * tmp_mb_header;
-
 	uint32_t palloc_init_address;
 
 	// Initialization
