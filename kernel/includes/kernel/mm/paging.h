@@ -25,7 +25,8 @@ enum page_entry_flags {
 };
 
 enum page_mapping_flags {
-	MAPPING_WIPE_PAGE  = 0x01,
+	MAPPING_WIPE_PAGE     = 0x01,
+	MAPPING_FLUSH_CHANGES = 0x02,
 };
 
 void paging_init();

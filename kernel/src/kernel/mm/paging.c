@@ -98,7 +98,7 @@ inline void paging_map(void *virtual_address, uint32_t flags)
     if(physical_address == 0x00)
         return;
 
-    map_implementation(physical_address, virtual_address, flags, MAPPING_WIPE_PAGE);
+    map_implementation(physical_address, virtual_address, flags, MAPPING_WIPE_PAGE | MAPPING_FLUSH_CHANGES);
 }
 inline void paging_map2(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags)
 {
@@ -137,6 +137,7 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
     }
 
     pt = (uint32_t*)(REFLECTED_PAGE_TABLE_BASE_ADDRESS + PAGE_SIZE * pdindex);
+
     if(pt == 0x00) {
     	// TODO: Page already exists, what do we do now???
     	kprintf(KPRINT_DEBUG "Page already exists! (Physical: 0x%x, Virtual: 0x%x)\n",
@@ -147,7 +148,7 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
     pt_entry = page_flags & 0xFFF;
     pt_entry |= (uint32_t)physical_address; 
     pt[ptindex] = pt_entry;
-
+    
     /**
      * Wipe page contents
     */
@@ -158,7 +159,8 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
      * Need to flush TLB changes
      * XXX: Is this needed actually?
      */
-    paging_switch_directory(paging_directory, 0);
+    if(mapping_flags & MAPPING_FLUSH_CHANGES)
+        paging_switch_directory(paging_directory, 0);
 }
 
 /**

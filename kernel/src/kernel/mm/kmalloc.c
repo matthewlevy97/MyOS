@@ -31,11 +31,12 @@ void kmalloc_init()
 		buddy_size_paged = PAGE_SIZE;
 	}
 
+	// Base address for the heap is right after tree data
 	heap_base_address = (uint8_t*)buddy_nodes + buddy_size_paged;
 
 	// Map a full page directory of entries (4 MiB)
 	heap_top_address = (uint8_t*)buddy_nodes;
-	for(int i = 0; i < PAGE_TABLE_ENTRIES; i++) {
+	for(size_t i = 0; i < PAGE_TABLE_ENTRIES; i++) {
 		paging_map(heap_top_address, PAGE_PRESENT | PAGE_READ_WRITE);
 		heap_top_address += PAGE_SIZE;
 	}
