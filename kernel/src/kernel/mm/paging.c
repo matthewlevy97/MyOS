@@ -20,6 +20,9 @@ static inline void native_flush_tlb_single(uintptr_t addr);
 
 extern uintptr_t * kernel_page_directory;
 
+/**
+ * @brief      Initialize paging code
+ */
 void paging_init()
 {
 	kprintf(KPRINT_DEBUG "Paging Directory Address: 0x%x\n", paging_virtual_to_physical(&kernel_page_directory));
@@ -101,6 +104,13 @@ void * paging_clone_directory(void *directory_virtual, uint32_t clone_flags)
     return (void*)dst;
 }
 
+/**
+ * @brief      Creates a new page table entry for a given virtual address in a provided page directory
+ *
+ * @param      virtual_address           The virtual address to map
+ * @param[in]  page_flags                The flags for the page when it is created
+ * @param      paging_directory_virtual  The paging directory (virtual address) to use
+ */
 void paging_create_page_table(void *virtual_address, uint32_t page_flags, uint32_t *paging_directory_virtual)
 {
     uint32_t pdindex, ptindex, physical_address;
@@ -167,6 +177,14 @@ inline void paging_map2(void *physical_address, void *virtual_address, uint32_t 
     map_implementation(physical_address, virtual_address, page_flags, mapping_flags);
 }
 
+/**
+ * @brief      Actual implementation of code to map a page into memory
+ *
+ * @param      physical_address  The physical address of the page to map
+ * @param      virtual_address   The virtual address to map the page to
+ * @param[in]  page_flags        The flags for the page when it is created
+ * @param[in]  mapping_flags     The flags for how to map the page
+ */
 static void map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags)
 {
 	uint32_t *paging_directory, pdindex, ptindex;
@@ -268,6 +286,11 @@ void paging_switch_directory(uint32_t * page_dir, uint32_t phys)
     asm volatile("mov %0, %%cr3" :: "r"((uint32_t)page_dir));
 }
 
+/**
+ * @brief      Handles page faults when they occur (via interrupt)
+ *
+ * @param      args  The arguments passed from the initial ISR handler
+ */
 void page_fault_handler(struct isr_arguments *args)
 {
     uintptr_t accessed_page;
@@ -314,6 +337,11 @@ void page_fault_handler(struct isr_arguments *args)
     }
 }
 
+/**
+ * @brief      Invalidate a TLB entry given an address. (Perform TLB shootdown).
+ *
+ * @param[in]  addr  The address (physical) to invalidate
+ */
 static inline void native_flush_tlb_single(uintptr_t addr)
 {
    asm volatile("invlpg (%0)" ::"r" (addr) : "memory");

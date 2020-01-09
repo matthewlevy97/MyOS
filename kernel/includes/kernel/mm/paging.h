@@ -14,6 +14,9 @@
 #define REFLECTED_PAGE_DIRECTORY_ADDRESS  0xFFFFF000
 #define REFLECTED_PAGE_DIRECTORY_ENTRY    1023
 
+/**
+ * @brief      Flags for setting permissions on page directory/table entries
+ */
 enum page_entry_flags {
 	PAGE_PRESENT        = 0x01,
 	PAGE_READ_WRITE     = 0x02,
@@ -26,11 +29,17 @@ enum page_entry_flags {
 	PAGE_GLOBAL         = 0x100,
 };
 
+/**
+ * @brief      Flags for how to map a page into memory
+ */
 enum page_mapping_flags {
 	MAPPING_WIPE_PAGE     = 0x01,
 	MAPPING_FLUSH_CHANGES = 0x02,
 };
 
+/**
+ * @brief      Flags for how to clone a page directory
+ */
 enum page_clone_flags {
 	CLONE_KERNEL_ONLY     = 0x01,
 };
