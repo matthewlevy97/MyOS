@@ -18,6 +18,7 @@ process_switch:
 	// save edi to stack to be able to get its value below
 	push %edi
     
+    // TODO: Should a call be made to irq_disable() instead of cli???  
     // Disable interrupts
     cli
 
@@ -84,6 +85,7 @@ process_switch:
     mov 16(%esi), %edi
     mov 20(%esi), %esi
 
+    // TODO: Should a call be made to irq_enable() instead of sti???
     // Re-enable interrupts
     sti
 
