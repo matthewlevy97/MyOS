@@ -74,7 +74,7 @@ static SDT_Header *find_rsdt_identifier(RSDPv1 *rsdp, const char *identifier)
 
 	entries = (rsdt->header.length - sizeof(SDT_Header)) / sizeof(uintptr_t);
 	for(uint32_t i = 0; i < entries; i++) {
-		tmp = rsdt->sdt_ptrs[i];
+		tmp = (SDT_Header *)rsdt->sdt_ptrs[i];
 		paging_map2(tmp, (void*)PAGE_ALIGN((uintptr_t)tmp), PAGE_PRESENT | PAGE_READ_WRITE, 0);
 		
 		// Check for match and copy into buffer
