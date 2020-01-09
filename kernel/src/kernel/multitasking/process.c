@@ -1,3 +1,4 @@
+#include <kprint.h>
 #include <mm/kmalloc.h>
 #include <mm/palloc.h>
 #include <mm/paging.h>
@@ -14,17 +15,32 @@ static void * create_new_process_stack(uintptr_t *page_dir);
 
 static pid_t pid_current = 0;
 
+/**
+ * @brief      Initialize process handling
+ */
 void process_init()
 {
 	current_process = process_create(NULL, 0, paging_directory_address(), NO_CREATE_STACK);
 }
 
+/**
+ * @brief      Create a new process control block
+ *
+ * @param[in]  main             The main function to set EIP to on first run of code
+ * @param[in]  eflags           The value to set to eflags on startup
+ * @param      pagedir_virtual  The page dirirectory (virtual address) of the process
+ * @param[in]  creation_flags   Flags used for the creation of the process
+ *
+ * @return     Pointer to the Process Control Block, or NULL on failure
+ */
 struct process_control_block *process_create(void (*main)(), uint32_t eflags,
 	void *pagedir_virtual, uint32_t creation_flags)
 {
 	struct process_control_block *process;
 	
 	process = (struct process_control_block*)kmalloc(sizeof(struct process_control_block));
+	if(!process)
+		return NULL;
 
 	process->registers.eax = 0;
 	process->registers.ebx = 0;
@@ -50,12 +66,20 @@ struct process_control_block *process_create(void (*main)(), uint32_t eflags,
     return process;
 }
 
+/**
+ * @brief      Yield control of the current process to the next process in the PCB linked-list
+ */
 void process_yield()
 {
 	if(current_process->next)
 		process_switch(current_process->next);
 }
 
+/**
+ * @brief      Dump information about a provided process
+ *
+ * @param      process  The process to dump
+ */
 void dump_process(struct process_control_block *process)
 {
 	kprintf("------------------------\n");
