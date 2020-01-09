@@ -23,16 +23,31 @@ void isr_init()
 	sync_depth = 0;
 }
 
+/**
+ * @brief      Sets the interrupt service routine sync depth
+ *
+ * @param[in]  depth  The depth to set to
+ */
+void irq_set_sync_depth(uint32_t depth)
+{
+	sync_depth = depth;
+}
+
+/**
+ * @brief      Gets the interrupt service routine sync depth
+ */
+uint32_t irq_get_sync_depth()
+{
+	return sync_depth;
+}
+
+/**
+ * @brief      Disable IRQs
+ */
 void irq_disable()
 {
 	uint32_t eflags;
-	asm volatile("pushf\n\t"
-				 "pop %%eax\n\t"
-				 "movl %%eax, %0\n\t"
-				 : "=r"(eflags)
-				 :
-				 : "%eax"
-	);
+	eflags = eflags_get();
 
 	// Disable interrupts
 	SYNC_CLI();
@@ -43,6 +58,10 @@ void irq_disable()
 	else
 		sync_depth++;
 }
+
+/**
+ * @brief      Similar to irq_enable(). Only enables IRQs if the number of irq_disables()'s == number of irq_resume()'s
+ */
 void irq_resume()
 {
 	// Only enable interrupts if returned to first call depth
@@ -52,6 +71,10 @@ void irq_resume()
 		sync_depth--;
 	}
 }
+
+/**
+ * @brief      Enable IRQs
+ */
 void irq_enable()
 {
 	sync_depth = 0;
@@ -80,4 +103,24 @@ void default_irq_handler(struct isr_arguments *args)
 	// This is the slave that sent this
 	if(args->interrupt_number - IRQ0 > 8)
 		outb(PIC2, PIC_ACK);
+}
+
+/**
+ * @brief      Get the current value of the eflags register
+ *
+ * @return     Value of EFLAGS
+ */
+inline uint32_t eflags_get()
+{
+	uint32_t eflags;
+
+	asm volatile("pushf\n\t"
+				 "pop %%eax\n\t"
+				 "movl %%eax, %0\n\t"
+				 : "=r"(eflags)
+				 :
+				 : "%eax"
+	);
+
+	return eflags;
 }

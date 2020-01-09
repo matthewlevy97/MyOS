@@ -1,4 +1,5 @@
 #include <kprint.h>
+#include <i686/isr.h>
 #include <mm/kmalloc.h>
 #include <mm/palloc.h>
 #include <mm/paging.h>
@@ -38,8 +39,9 @@ process_t process_create(void (*main)(), uint32_t creation_flags, priority_t pri
 {
 	uint32_t eflags;
 	void *pagedir_virtual;
-
-	eflags = 0;
+	
+	// XXX: Do I need to get the current process's eflags? Should I set to a static number? Set to 0?
+	eflags = eflags_get();
 	pagedir_virtual = paging_clone_directory(paging_directory_address(), CLONE_KERNEL_ONLY);
 
 	return process_create2(main, eflags, pagedir_virtual, creation_flags, priority);

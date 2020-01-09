@@ -1,7 +1,8 @@
 # Kernel
 - Kernel currently implements:
 	- Paging
-	- KMalloc
+	- KMalloc (Buddy based allocator)
+	- Priority based, Preemptive multitasking
 - Checkout TODO.md for current list of features to implement
 
 # Memory Layout

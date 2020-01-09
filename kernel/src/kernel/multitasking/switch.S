@@ -1,26 +1,27 @@
 .section .text
 
-.global current_process
+.extern current_process
 .type current_process, @object
 
-.global tss_entry
+.extern tss_entry
 .type tss_entry, @object
+
+.extern irq_disable
+.type irq_disable, @function
+
+.extern irq_resume
+.type irq_resume, @function
 
 .global process_switch
 .type process_switch, @function
-
-/*
-TODO: Not saving EFLAGS on switch
-*/
 
 /* void process_switch(struct process_control_block *next_process); */
 process_switch:
 	// save edi to stack to be able to get its value below
 	push %edi
     
-    // TODO: Should a call be made to irq_disable() instead of cli???  
     // Disable interrupts
-    cli
+    call irq_disable
 
 	mov current_process, %edi	// address of current process_control_block structure
 
@@ -31,17 +32,21 @@ process_switch:
 	mov %edx, 12(%edi)
 	
 	mov (%esp), %eax		// Get edi value from stack (pushed)
+    add $4, %esp
 	mov %eax, 16(%edi)
 	mov %esi, 20(%edi)
-
-	// Remove edi from stack
-	// Must be done before esp is saved
-    // Value is just ignored as it is already saved
-	pop %esi
 
     // Get return address
     mov (%esp), %eax
     mov %eax, 32(%edi)
+
+    // Get EFLAGS
+    pushf
+    pop 36(%edi)
+
+    // Save interrupt sync depth
+    call irq_get_sync_depth
+    mov %eax, 48(%edi)
 
     mov %esp, 24(%edi)
     mov %ebp, 28(%edi)
@@ -73,6 +78,15 @@ process_switch:
     mov 24(%esi), %esp
     mov 28(%esi), %ebp
 
+    // Get interrupt sync depth
+    push 48(%esi)
+    call irq_get_sync_depth
+    add $4, %esp
+
+    // Set EFLAGS
+    push 36(%esi)
+    popf
+
     // Set return address
     mov 32(%esi), %eax
     mov %eax, (%esp)
@@ -85,9 +99,8 @@ process_switch:
     mov 16(%esi), %edi
     mov 20(%esi), %esi
 
-    // TODO: Should a call be made to irq_enable() instead of sti???
     // Re-enable interrupts
-    sti
+    call irq_resume
 
 	ret
 .size process_switch, . - process_switch

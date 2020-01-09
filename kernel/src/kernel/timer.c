@@ -1,6 +1,7 @@
 #include <timer.h>
 #include <portio.h>
 #include <i686/pic.h>
+#include <multitasking/process.h>
 
 /**
  * @brief      Initialize the PIT timer
@@ -29,4 +30,17 @@ void timer_init(uint32_t frequency)
 
 	// Enable PIT IRQ
 	enable_irq(0);
+}
+
+/**
+ * @brief      Handles preemptive multitasking code
+ *
+ * @param      args  The arguments passed from the initial ISR handler
+ */
+void timer_interrupt_handler(struct isr_arguments *args)
+{
+	// Acknowledge PIC
+	outb(PIC1, PIC_ACK);
+
+	process_yield();
 }

@@ -1,4 +1,5 @@
 #include <kpanic.h>
+#include <kprint.h>
 #include <string.h>
 #include <mm/kmalloc.h>
 #include <multitasking/process.h>
@@ -32,30 +33,32 @@ void scheduler_add_process(process_t process)
 	struct scheduler_priority_bucket *bucket;
 	pid_t pid;
 
+	pid = process->pid;
+
 	// Check valid priority
 	if(process->priority < PRIORITY_CRITICAL || process->priority >= PRIORITY_NUMBER_OF_PRIORITIES)
 		goto failed;
 
 	// Check if PID valid and not being used
-	if(process->pid >= MAX_PROCESS_PID || processes[process->pid].process)
+	if(pid >= MAX_PROCESS_PID || processes[pid].process)
 		goto failed;
 
 	// Add to process list
-	processes[process->pid].process = process;
-	processes[process->pid].next    = NULL;
+	processes[pid].process = process;
+	processes[pid].next    = NULL;
 
 	// Get the bucket for the priority to be added to
 	bucket = &(priority_buckets[process->priority]);
 
 	// Add to head of list
 	if(bucket->head == NULL || bucket->head->process == NULL) {
-		bucket->head = &(processes[process->pid]);
+		bucket->head = &(processes[pid]);
 		goto process_added;
 	}
 
 	// Add to head of list
-	processes[process->pid].next = bucket->head;
-	bucket->head = &(processes[process->pid]);
+	processes[pid].next = bucket->head;
+	bucket->head = &(processes[pid]);
 
 process_added:
 	return;

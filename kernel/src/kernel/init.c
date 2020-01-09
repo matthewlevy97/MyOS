@@ -98,12 +98,12 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 
-	// Setup processes to run
+	// XXX: Setup processes to run
 
-	// Yield control over to scheduler
-	process_yield();
+	// Start timer which runs scheduling code, etc.
+	install_interrupt_handler(IRQ0, timer_interrupt_handler);
 
-	while(1) process_yield();
+	while(1);
 	__builtin_unreachable();
 }
 

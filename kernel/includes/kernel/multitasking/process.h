@@ -45,6 +45,7 @@ struct process_control_block {
 	/* Update switch.S if modified */
 	struct process_registers registers;
 	uintptr_t tss_esp0;
+	uint32_t interrupt_sync_depth;
 	/* Can modify below this point freely */
 	
 	priority_t priority;

@@ -6,6 +6,9 @@
 .extern isr_handler
 .type isr_handler, @function
 
+.extern irq_disable
+.type irq_disable, @function
+
 .global isr_common_stub
 .type isr_common_stub, @function
 
@@ -17,7 +20,7 @@
 	.type isr\isr_number, @function
 
 	isr\isr_number:
-		cli
+		call irq_disable
 		push $0
 		push $\isr_number
 		jmp isr_common_stub
@@ -29,7 +32,7 @@
 	.type isr\isr_number, @function
 
 	isr\isr_number:
-		cli
+		call irq_disable
 		push $\isr_number
 		jmp isr_common_stub
 	.size isr\isr_number, . - isr\isr_number
@@ -43,7 +46,7 @@
 	.type irq\irq_number, @function
 
 	irq\irq_number:
-		cli
+		call irq_disable
 		push $0
 		push $\isr_number
 		jmp isr_common_stub
