@@ -13,9 +13,21 @@ enum process_creation_flags {
 };
 
 /**
+ * @brief      Priorities for a given process
+ */
+typedef enum {
+		PRIORITY_CRITICAL,
+		PRIORITY_ELEVATED,
+		PRIORITY_NORMAL,
+		PRIORITY_LOW,
+		PRIORITY_NUMBER_OF_PRIORITIES
+} priority_t;
+
+/**
  * Typedef for the PID of a process
  */
-typedef uint32_t pid_t;
+typedef uint16_t pid_t;
+#define MAX_PROCESS_PID ((1 << (sizeof(pid_t) * 8)) - 1)
 
 /**
  * @brief      Register information for a process.
@@ -24,7 +36,7 @@ typedef uint32_t pid_t;
  */
 struct process_registers {
 	uint32_t eax, ebx, ecx, edx, esi, edi, esp, ebp, eip, eflags, cr3;
-};
+} __attribute__((packed));
 
 /**
  * @brief      Stores information about a process
@@ -35,20 +47,25 @@ struct process_control_block {
 	uintptr_t tss_esp0;
 	/* Can modify below this point freely */
 	
-	struct process_control_block *next;
+	priority_t priority;
 	pid_t pid;
-};
+} __attribute__((packed));
+
+typedef struct process_control_block* process_t;
 
 /**
  * @brief      Holds a pointer to the currently running process
  */
-extern struct process_control_block *current_process;
+extern process_t current_process;
 
 void process_init();
-struct process_control_block *process_create(void (*main)(), uint32_t eflags,
-	void *pagedir_virtual, uint32_t creation_flags);
+
+process_t process_create(void (*main)(), uint32_t creation_flags, priority_t priority);
+process_t process_create2(void (*main)(), uint32_t eflags,
+	void *pagedir_virtual, uint32_t creation_flags,
+	priority_t priority);
 
 void process_yield();
-void process_switch(struct process_control_block *next_process);
+void process_switch(process_t next_process);
 
-void dump_process(struct process_control_block *process);
+void dump_process(process_t process);

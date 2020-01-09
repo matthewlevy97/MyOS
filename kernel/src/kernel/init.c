@@ -14,6 +14,7 @@
 #include <multiboot/multiboot2.h>
 #include <multiboot/multiboot_parser.h>
 #include <multitasking/process.h>
+#include <multitasking/scheduler.h>
 
 extern uint32_t _kernel_end, _kernel_start, _kernel_offset;
 
@@ -86,6 +87,9 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	acpi_init(mb_acpi);
 	kprintf(KPRINT_DEBUG "ACPI Initialized\n");
 
+	scheduler_init();
+	kprintf(KPRINT_DEBUG "Process Scheduler Initialized\n");
+
 	process_init();
 	kprintf(KPRINT_DEBUG "Multitasking Initialized\n");
 
@@ -94,7 +98,12 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
 
-	while(1);
+	// Setup processes to run
+
+	// Yield control over to scheduler
+	process_yield();
+
+	while(1) process_yield();
 	__builtin_unreachable();
 }
 

@@ -9,7 +9,8 @@
 	- expand heap size
 - Implement filesystem
 	- abstract code between low level and high level FS functionality (VFS)
-- Errno for libc functions
+- Errno for functions
+	- Many functions are void that should return some errno value
 - Improve kpanic()
 	- Dump registers when calling kpanic
 - Implement kernel threads

@@ -3,8 +3,9 @@
 #include <mm/palloc.h>
 #include <mm/paging.h>
 #include <multitasking/process.h>
+#include <multitasking/scheduler.h>
 
-struct process_control_block *current_process;
+process_t current_process;
 
 /*
  * TODO:
@@ -13,6 +14,7 @@ struct process_control_block *current_process;
 
 static void * create_new_process_stack(uintptr_t *page_dir);
 
+// TODO: Get a better method for PID creation
 static pid_t pid_current = 0;
 
 /**
@@ -20,7 +22,27 @@ static pid_t pid_current = 0;
  */
 void process_init()
 {
-	current_process = process_create(NULL, 0, paging_directory_address(), NO_CREATE_STACK);
+	current_process = process_create2(NULL, 0, paging_directory_address(), NO_CREATE_STACK, PRIORITY_LOW);
+}
+
+/**
+ * @brief      Create a new process control block
+ *
+ * @param[in]  main             The main function to set EIP to on first run of code
+ * @param[in]  creation_flags   Flags used for the creation of the process
+ * @param[in]  priority         The priority of the process
+ *
+ * @return     Pointer to the Process Control Block, or NULL on failure
+ */
+process_t process_create(void (*main)(), uint32_t creation_flags, priority_t priority)
+{
+	uint32_t eflags;
+	void *pagedir_virtual;
+
+	eflags = 0;
+	pagedir_virtual = paging_clone_directory(paging_directory_address(), CLONE_KERNEL_ONLY);
+
+	return process_create2(main, eflags, pagedir_virtual, creation_flags, priority);
 }
 
 /**
@@ -30,15 +52,17 @@ void process_init()
  * @param[in]  eflags           The value to set to eflags on startup
  * @param      pagedir_virtual  The page dirirectory (virtual address) of the process
  * @param[in]  creation_flags   Flags used for the creation of the process
+ * @param[in]  priority         The priority of the process
  *
  * @return     Pointer to the Process Control Block, or NULL on failure
  */
-struct process_control_block *process_create(void (*main)(), uint32_t eflags,
-	void *pagedir_virtual, uint32_t creation_flags)
+process_t process_create2(void (*main)(), uint32_t eflags,
+	void *pagedir_virtual, uint32_t creation_flags,
+	priority_t priority)
 {
-	struct process_control_block *process;
+	process_t process;
 	
-	process = (struct process_control_block*)kmalloc(sizeof(struct process_control_block));
+	process = (process_t)kmalloc(sizeof(struct process_control_block));
 	if(!process)
 		return NULL;
 
@@ -60,8 +84,10 @@ struct process_control_block *process_create(void (*main)(), uint32_t eflags,
     	process->registers.esp = (uintptr_t)create_new_process_stack(pagedir_virtual);
     }
 
-    process->next = NULL;
-    process->pid  = pid_current++;
+    process->pid      = pid_current++;
+    process->priority = priority;
+
+    scheduler_add_process(process);
 
     return process;
 }
@@ -71,8 +97,13 @@ struct process_control_block *process_create(void (*main)(), uint32_t eflags,
  */
 void process_yield()
 {
-	if(current_process->next)
-		process_switch(current_process->next);
+	process_t next;
+
+	next = scheduler_get_next();
+	
+	if(current_process->pid != next->pid) {
+		process_switch(next);
+	}
 }
 
 /**
@@ -80,7 +111,7 @@ void process_yield()
  *
  * @param      process  The process to dump
  */
-void dump_process(struct process_control_block *process)
+void dump_process(process_t process)
 {
 	kprintf("------------------------\n");
 	kprintf("Process PID:   %d\n", process->pid);
