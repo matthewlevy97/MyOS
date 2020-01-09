@@ -172,11 +172,19 @@ void palloc_mark_inuse(uintptr_t address)
 	bitmap_set(allocated_pages_bitmap, bitmap_size, index);
 }
 
+/**
+ * @brief      Finds the index in the allocated_pages_bitmap for an address.
+ *
+ * @param[in]  address  The physical address
+ *
+ * @return     Returns the index of the found address in the bitmap, or MAX_UINT (-1) if failed.
+ */
 static uint32_t find_index_by_address(uintptr_t address)
 {
 	uint32_t index;
 
-	index = 0;
+	// Fail case, returns -1 (MAX_UINT)
+	index = (uint32_t)-1;
 
 	if(number_mmap_entries == 0) {
 		index = (address - base_address) / PAGE_SIZE;
@@ -187,6 +195,10 @@ static uint32_t find_index_by_address(uintptr_t address)
 	for(uint32_t i = 0; i < number_mmap_entries; i++) {
 		if(mmap_entries[i].type != MULTIBOOT_MEMORY_AVAILABLE || mmap_entries[i].addr + mmap_entries[i].len < base_address)
 			continue;
+
+		// Start at 0 if found
+		if(index == (uint32_t)-1)
+			index = 0;
 
 		if(address >= mmap_entries[i].addr + mmap_entries[i].len) {
 			index += mmap_entries[i].len / PAGE_SIZE;
