@@ -89,8 +89,7 @@ void * paging_clone_directory(void *directory_virtual, uint32_t clone_flags)
     entry = 0;
 
     if(clone_flags & CLONE_KERNEL_ONLY) {
-        // TODO: Don't leave 768 as a number, define that bitch
-        entry = 768;
+        entry = KERNEL_CODE_START_PAGE_DIRECTORY_INDEX;
     }
 
     // Copy entries
