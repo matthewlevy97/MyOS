@@ -255,9 +255,7 @@ static void idt_set_gate(uint8_t index, uint32_t base, uint16_t sel, uint8_t fla
 	idt_entries[index].always0 = 0;
 
 	/*
-	* TODO:
-	* 	We must uncomment the OR below when we get to using user-mode.
-	* 	It sets the interrupt gate's privilege level to 3.
+	* 	Set the interrupt gate's privilege level to 3.
 	*/
-	idt_entries[index].flags   = flags /* | 0x60 */;
+	idt_entries[index].flags   = flags | GDT_RING_3;
 }
