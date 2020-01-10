@@ -82,17 +82,6 @@ void descriptor_tables_init()
 }
 
 /**
- * @brief      Sets the kernel stack in a TSS
- *
- * @param[in]  stack_address  The stack address
- */
-void set_kernel_stack(uintptr_t stack_address)
-{
-	// TODO: Call this function
-	tss_entry.esp0 = stack_address;
-}
-
-/**
  * @brief      Initialize the GDT
  */
 static void gdt_init()

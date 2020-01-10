@@ -128,4 +128,3 @@ extern void idt_flush(uint32_t address);
 extern void tss_flush();
 
 void descriptor_tables_init();
-void set_kernel_stack(uintptr_t stack_address);
