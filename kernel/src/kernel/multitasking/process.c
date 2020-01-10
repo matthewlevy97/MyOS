@@ -13,7 +13,7 @@ process_t current_process;
  * 	Disable interrupts in here
  */
 
-static void * create_new_process_stack(uintptr_t *page_dir);
+static uintptr_t stack_randomize_base();
 
 // TODO: Get a better method for PID creation
 static pid_t pid_current = 0;
@@ -81,14 +81,25 @@ process_t process_create2(void (*main)(), uint32_t eflags,
     process->registers.cr3 = (uintptr_t)paging_virtual_to_physical(pagedir_virtual);
 
     if(creation_flags & NO_CREATE_STACK) {
-    	process->registers.esp = 0;
+    	process->registers.esp      = 0;
+    	process->tss_esp0 = 0;
     } else {
-    	process->registers.esp = (uintptr_t)create_new_process_stack(pagedir_virtual);
+    	// Setup user stack
+    	process->registers.esp = PROCESS_USER_STACK_BASE_ADDRESS - stack_randomize_base();
+    	paging_create_page_table((void*)process->registers.esp,
+    		PAGE_PRESENT | PAGE_READ_WRITE | PAGE_USER_ACCESS, pagedir_virtual);
+
+    	// Setup kernel stack
+    	process->tss_esp0 = PROCESS_KERNEL_STACK_BASE_ADDRESS - stack_randomize_base();
+    	paging_create_page_table((void*)process->tss_esp0,
+    		PAGE_PRESENT | PAGE_READ_WRITE | PAGE_USER_ACCESS, pagedir_virtual);
     }
 
+    process->interrupt_sync_depth = 0;
     process->pid      = pid_current++;
     process->priority = priority;
 
+    // Add the process to the scheduler
     scheduler_add_process(process);
 
     return process;
@@ -134,16 +145,13 @@ void dump_process(process_t process)
     kprintf("------------------------\n");
 }
 
-/*
- * TODO: Create new page directory with new kernel stack
- * TODO: If not in kernel -> local stack, and local heap; else, local stack = kernel stack, no create local heap
-*/
-static inline void * create_new_process_stack(uintptr_t *page_dir)
+/**
+ * @brief      Basis for ASLR
+ *
+ * @return     Return a random offset for the stack to start at
+ */
+static inline uintptr_t stack_randomize_base()
 {
-	void * esp;
-
-	esp = (void*)(PROCESS_STACK_BASE_ADDRESS - (PROCESS_STACK_BASE_ADDRESS & 3) - sizeof(int) * 16);
-	paging_create_page_table(esp, PAGE_PRESENT | PAGE_READ_WRITE, page_dir);
-
-	return esp;
+	// TODO: Return a random value here
+	return 16 + pid_current * 4;
 }

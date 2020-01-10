@@ -3,7 +3,8 @@
 #include <stddef.h>
 #include <macros.h>
 
-#define PROCESS_STACK_BASE_ADDRESS 0x7FFFFFFF
+#define PROCESS_USER_STACK_BASE_ADDRESS   0x80000000
+#define PROCESS_KERNEL_STACK_BASE_ADDRESS 0xFF800000
 
 /**
  * @brief      Flags for creation of a new process
