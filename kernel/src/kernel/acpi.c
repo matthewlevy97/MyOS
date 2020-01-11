@@ -68,13 +68,13 @@ static SDT_Header *find_rsdt_identifier(RSDPv1 *rsdp, const char *identifier)
 
 	rsdt = (RSDT*)rsdp->rsdt_address;
 
-	// TODO: Map to an actual address
-	// TODO: Need code to dish out temporary virtual addresses
+	// XXX: Might not want to identity map these pages
 	paging_map2(rsdt, (void*)PAGE_ALIGN((uintptr_t)rsdp->rsdt_address), PAGE_PRESENT | PAGE_READ_WRITE, 0);
 
 	entries = (rsdt->header.length - sizeof(SDT_Header)) / sizeof(uintptr_t);
 	for(uint32_t i = 0; i < entries; i++) {
 		tmp = (SDT_Header *)rsdt->sdt_ptrs[i];
+		// XXX: Might not want to identity map these pages
 		paging_map2(tmp, (void*)PAGE_ALIGN((uintptr_t)tmp), PAGE_PRESENT | PAGE_READ_WRITE, 0);
 		
 		// Check for match and copy into buffer
@@ -87,6 +87,8 @@ static SDT_Header *find_rsdt_identifier(RSDPv1 *rsdp, const char *identifier)
 		
 		paging_unmap(tmp);
 	}
+	
+	paging_unmap(rsdt);
 
 	return NULL;
 }
