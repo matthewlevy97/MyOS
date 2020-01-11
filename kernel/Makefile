@@ -58,6 +58,7 @@ $(SYS_ROOT): install_headers
 run: install
 	qemu-system-i386 -cdrom $(KERNEL_ISO) \
 	-hda $(KERNEL_HDA) \
+	-device ich9-ahci \
 	-m 128 \
 	-serial stdio \
 	-no-reboot
@@ -65,6 +66,7 @@ run: install
 debug: install
 	qemu-system-i386 -cdrom $(KERNEL_ISO) \
 	-hda $(KERNEL_HDA) \
+	-device ich9-ahci \
 	-m 128 \
 	-serial stdio \
 	-s -S \

@@ -2,6 +2,7 @@
 #include <macros.h>
 #include <kprint.h>
 #include <kpanic.h>
+#include <pci.h>
 #include <serial.h>
 #include <string.h>
 #include <timer.h>
@@ -86,6 +87,9 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	mb_acpi = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_ACPI_OLD);
 	acpi_init(mb_acpi);
 	kprintf(KPRINT_DEBUG "ACPI Initialized\n");
+
+	pci_init();
+	kprintf(KPRINT_DEBUG "PCI Initialized\n");
 
 	scheduler_init();
 	kprintf(KPRINT_DEBUG "Process Scheduler Initialized\n");

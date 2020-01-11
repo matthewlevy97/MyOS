@@ -19,14 +19,14 @@ void timer_init(uint32_t frequency)
 	divisor = 1193180 / frequency;
 
 	// 0x36 tells timer to repeat when it hits 0
-	outb(PIT_CMD, 0x36);
+	out8(PIT_CMD, 0x36);
 
 	l = (uint8_t)(divisor & 0xFF);
 	h = (uint8_t)((divisor >> 8) & 0xFF);
 
 	// Send the frequency divisor.
-	outb(PIT_CHAN0, l);
-	outb(PIT_CHAN0, h);
+	out8(PIT_CHAN0, l);
+	out8(PIT_CHAN0, h);
 
 	// Enable PIT IRQ
 	enable_irq(0);
@@ -40,7 +40,7 @@ void timer_init(uint32_t frequency)
 void timer_interrupt_handler(struct isr_arguments *args)
 {
 	// Acknowledge PIC
-	outb(PIC1, PIC_ACK);
+	out8(PIC1, PIC_ACK);
 
 	process_yield();
 }

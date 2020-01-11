@@ -98,11 +98,11 @@ void default_isr_handler(struct isr_arguments *args)
 {}
 void default_irq_handler(struct isr_arguments *args)
 {
-	outb(PIC1, PIC_ACK);
+	out8(PIC1, PIC_ACK);
 
 	// This is the slave that sent this
 	if(args->interrupt_number - IRQ0 > 8)
-		outb(PIC2, PIC_ACK);
+		out8(PIC2, PIC_ACK);
 }
 
 /**
