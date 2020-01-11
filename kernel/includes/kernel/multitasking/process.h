@@ -10,7 +10,8 @@
  * @brief      Flags for creation of a new process
  */
 enum process_creation_flags {
-	NO_CREATE_STACK = 0x01
+	NO_CREATE_STACK = 0x01,
+	KERNEL_MODE     = 0x02
 };
 
 /**
@@ -47,6 +48,7 @@ struct process_control_block {
 	struct process_registers registers;
 	uintptr_t tss_esp0;
 	uint32_t interrupt_sync_depth;
+	uint32_t user_mode;
 	/* Can modify below this point freely */
 	
 	priority_t priority;

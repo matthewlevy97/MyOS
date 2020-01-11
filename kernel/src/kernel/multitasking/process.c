@@ -92,10 +92,18 @@ process_t process_create2(void (*main)(), uint32_t eflags,
     	// Setup kernel stack
     	process->tss_esp0 = PROCESS_KERNEL_STACK_BASE_ADDRESS - stack_randomize_base();
     	paging_create_page_table((void*)process->tss_esp0,
-    		PAGE_PRESENT | PAGE_READ_WRITE | PAGE_USER_ACCESS, pagedir_virtual);
+    		PAGE_PRESENT | PAGE_READ_WRITE, pagedir_virtual);
     }
 
     process->interrupt_sync_depth = 0;
+
+    // Only allow running in kernel mode if the current process is also running in kernel mode
+    // XXX: I think this is secure, might need to revisit
+    if((creation_flags & KERNEL_MODE) && current_process->user_mode)
+    	process->user_mode = 0;
+    else
+    	process->user_mode = 1;
+
     process->pid      = pid_current++;
     process->priority = priority;
 
@@ -153,5 +161,5 @@ void dump_process(process_t process)
 static inline uintptr_t stack_randomize_base()
 {
 	// TODO: Return a random value here
-	return 16 + pid_current * 4;
+	return 64 + pid_current * 4;
 }

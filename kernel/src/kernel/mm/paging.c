@@ -133,7 +133,7 @@ void paging_create_page_table(void *virtual_address, uint32_t page_flags, uint32
     pt_physical = paging_virtual_to_physical(pt);
     if(!pt_physical)
         kpanic("Failed to get physical address of new page table!");
-    paging_directory_virtual[pdindex] = ((uint32_t)pt_physical & ~0xFFF) | PAGE_PRESENT | PAGE_READ_WRITE;
+    paging_directory_virtual[pdindex] = ((uint32_t)pt_physical & ~0xFFF) | page_flags;
 
     pt_entry = page_flags & 0xFFF;
     pt_entry |= physical_address; 
@@ -207,7 +207,7 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
     	if(!pt)
     		kpanic("Failed to get physical address of new page table!");
 
-    	paging_directory[pdindex] = ((uint32_t)pt & ~0xFFF) | PAGE_PRESENT | PAGE_READ_WRITE;
+    	paging_directory[pdindex] = ((uint32_t)pt & ~0xFFF) | page_flags;
     }
     
     pt = (uint32_t*)(REFLECTED_PAGE_TABLE_BASE_ADDRESS + PAGE_SIZE * pdindex);
@@ -305,7 +305,7 @@ void page_fault_handler(struct isr_arguments *args)
     // Does page exist, but not present?
     if(args->error_code & 0x1) {
         // Page protection violation
-        // TODO: Make page present
+        // TODO: Make page present is not a priv violation
         kprintf("Need to make present\n");
     }
 

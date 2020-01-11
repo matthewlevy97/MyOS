@@ -15,7 +15,7 @@ static void idt_init();
 static void irq_init();
 
 static void gdt_set_gate(uint8_t index, uint32_t base, uint32_t limit, uint8_t access, uint8_t granularity);
-static void tss_set_gate(uint8_t index, struct task_state_segment_s *tss_entry, uint8_t granularity);
+static void tss_set_gate(uint8_t index, struct task_state_segment_s *tss_entry);
 static void idt_set_gate(uint8_t index, uint32_t base, uint16_t sel, uint8_t flags);
 
 extern void isr0();
@@ -75,6 +75,7 @@ void descriptor_tables_init()
 {
 	gdt_init();
 	gdt_flush((uint32_t)&gdt_ptr);
+	tss_flush();
 
 	idt_init();
 	irq_init();
@@ -114,7 +115,7 @@ static void gdt_init()
 		GDT_PRESENT | GDT_RING_3 | GDT_NOT_SYSTEM_SEGMENT | GDT_READ_WRITE, 0xCF);
 
 	// Task State Segment (TSS)
-	tss_set_gate(5, &tss_entry, 0xCF);
+	tss_set_gate(5, &tss_entry);
 }
 
 /**
@@ -214,28 +215,30 @@ static void gdt_set_gate(uint8_t index, uint32_t base, uint32_t limit, uint8_t a
  *
  * @param[in]  index        The index into the gdt_entries array
  * @param      tss_entry    Pointer to the tss entry to load
- * @param[in]  granularity  The granularity of the segment
  */
-static void tss_set_gate(uint8_t index, struct task_state_segment_s *tss_entry, uint8_t granularity)
+static void tss_set_gate(uint8_t index, struct task_state_segment_s *tss_entry)
 {
 	uint32_t base, limit;
 
 	base  = (uint32_t)tss_entry;
-	limit = sizeof(struct task_state_segment_s);
+	limit = base + sizeof(struct task_state_segment_s);
 
-	gdt_entries[index].base_low    = (base & 0xFFFF);
-	gdt_entries[index].base_middle = (base >> 16) & 0xFF;
-	gdt_entries[index].base_high   = (base >> 24) & 0xFF;
-
-	gdt_entries[index].limit_low   = (limit & 0xFFFF);
-	gdt_entries[index].granularity = (limit >> 16) & 0x0F;
-
-	gdt_entries[index].granularity |= granularity & 0xF0; // 0xCF is same granulatity for others
-	gdt_entries[index].access      = GDT_PRESENT | GDT_RING_3 | GDT_EXECUTABLE | GDT_READ_WRITE | GDT_ACCESSED;
+	gdt_set_gate(index, base, limit, GDT_PRESENT | GDT_RING_3 | GDT_EXECUTABLE | GDT_ACCESSED, 0);
 
 	memset(tss_entry, 0, sizeof(struct task_state_segment_s));
+
 	tss_entry->ss0  = 0x10; // Kernel stack segment
 	tss_entry->esp0 = 0x00; // Should be set before task switching
+
+	// 0x08 | 0x3 = 0xB
+	tss_entry->cs = 0x0B;
+
+	// 0x10 | 0x3 = 0x13
+	tss_entry->ss = 0x13;
+	tss_entry->ds = 0x13;
+	tss_entry->es = 0x13;
+	tss_entry->fs = 0x13;
+	tss_entry->gs = 0x13;
 }
 
 /**
