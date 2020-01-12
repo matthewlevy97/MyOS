@@ -3,15 +3,12 @@
 #include <stddef.h>
 #include <macros.h>
 
-#define PROCESS_USER_STACK_BASE_ADDRESS   0x80000000
-#define PROCESS_KERNEL_STACK_BASE_ADDRESS 0xFF800000
-
 /**
  * @brief      Flags for creation of a new process
  */
 enum process_creation_flags {
-	NO_CREATE_STACK = 0x01,
-	KERNEL_MODE     = 0x02
+	KERNEL_MODE     = 0x01,
+	COPY_SYNC_DEPTH = 0x02,
 };
 
 /**
@@ -51,6 +48,10 @@ struct process_control_block {
 	uint32_t user_mode;
 	/* Can modify below this point freely */
 	
+	void *pagedir_virtual;
+	
+	uint32_t creation_flags;
+	
 	priority_t priority;
 	pid_t pid;
 } __attribute__((packed));
@@ -64,12 +65,14 @@ extern process_t current_process;
 
 void process_init();
 
-process_t process_create(void (*main)(), uint32_t creation_flags, priority_t priority);
-process_t process_create2(void (*main)(), uint32_t eflags,
+process_t process_create(uint32_t creation_flags, priority_t priority);
+process_t process_create2(uint32_t eflags,
 	void *pagedir_virtual, uint32_t creation_flags,
 	priority_t priority);
 
 void process_yield();
+
+void process_creation_complete(void *eip);
 void process_switch(process_t next_process);
 
 void dump_process(process_t process);

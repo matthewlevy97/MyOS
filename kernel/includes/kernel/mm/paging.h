@@ -4,6 +4,9 @@
 
 #define PAGE_ALIGN(x) ((x) & 0xFFFFF000)
 
+#define GET_PAGE_DIR_INDEX(address) ((address) >> 22)
+#define GET_PAGE_TABLE_INDEX(address) (((address) >> 12) & 0x3FF)
+
 #define KERNEL_ADDRESS_TO_PHYSICAL(x) ((x) - 0xC0000000)
 #define KERNEL_CODE_START_PAGE_DIRECTORY_INDEX 768
 
@@ -51,13 +54,13 @@ void * paging_directory_address();
 
 void * paging_virtual_to_physical(void *virtual_address);
 
-void paging_map(void *virtual_address, uint32_t flags, uint32_t mapping_flags);
-void paging_map2(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags);
+bool paging_map(void *virtual_address, uint32_t flags, uint32_t mapping_flags);
+bool paging_map2(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags);
 
-void paging_unmap(void *virtual_address);
+bool paging_unmap(void *virtual_address);
 
 void * paging_clone_directory(void *directory_physical, uint32_t clone_flags);
-void paging_create_page_table(void *virtual_address, uint32_t page_flags, uint32_t *paging_directory_virtual);
+bool paging_create_page_table(void *virtual_address, uint32_t page_flags, uint32_t *paging_directory_virtual);
 
 void paging_switch_directory(uint32_t * page_dir, uint32_t phys);
 

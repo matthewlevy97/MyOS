@@ -72,7 +72,6 @@ _start:
 	*/
 	movl %esi, %edx
 	orl $0x003, %edx
-	orl $0x004, %edx // TODO: Remove 4 once loading usermode from non-kernel code sections
 	movl %edx, (%edi)
 
 2:
@@ -112,7 +111,6 @@ _start:
 		would instead page fault if there was no identity mapping.
 	*/
 	movl $(_kernel_page_table - 0xC0000000 + 0x003), kernel_page_directory - 0xC0000000
-	// TODO: Remove 4 once loading usermode from non-kernel code sections
 	movl $(_kernel_page_table - 0xC0000000 + 0x003 + 4), kernel_page_directory - 0xC0000000 + 768 * 4
 
 	/*

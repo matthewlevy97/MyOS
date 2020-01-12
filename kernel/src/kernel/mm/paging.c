@@ -15,7 +15,7 @@
  * 	page_directory recursively mapped to 0xFFFFF000
 */
 
-static void map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags);
+static bool map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags);
 static inline void native_flush_tlb_single(uintptr_t addr);
 
 extern uintptr_t * kernel_page_directory;
@@ -53,8 +53,8 @@ void * paging_virtual_to_physical(void *virtual_address)
 
     paging_directory = (uintptr_t*)REFLECTED_PAGE_DIRECTORY_ADDRESS;
 
-	pdindex = (uint32_t)virtual_address >> 22;
-    ptindex = (uint32_t)virtual_address >> 12 & 0x03FF;
+	pdindex = GET_PAGE_DIR_INDEX((uint32_t)virtual_address);
+    ptindex = GET_PAGE_TABLE_INDEX((uint32_t)virtual_address);
     
     if((paging_directory[pdindex] & PAGE_PRESENT) == 0x00) {
     	kprintf(KPRINT_ERROR "Page table does not exist/loaded 0x%x\n", paging_directory[pdindex]);
@@ -109,22 +109,24 @@ void * paging_clone_directory(void *directory_virtual, uint32_t clone_flags)
  * @param      virtual_address           The virtual address to map
  * @param[in]  page_flags                The flags for the page when it is created
  * @param      paging_directory_virtual  The paging directory (virtual address) to use
+ *
+ * @return     True if mapping successful, False if not
  */
-void paging_create_page_table(void *virtual_address, uint32_t page_flags, uint32_t *paging_directory_virtual)
+bool paging_create_page_table(void *virtual_address, uint32_t page_flags, uint32_t *paging_directory_virtual)
 {
     uint32_t pdindex, ptindex, physical_address;
     uint32_t *pt, *pt_physical, pt_entry;
 
     physical_address = (uint32_t)palloc_physical();
     if(physical_address == 0x00)
-        return;
+        return false;
 
-    pdindex = (uint32_t)virtual_address >> 22;
-    ptindex = ((uint32_t)virtual_address >> 12) & 0x3FF;
+    pdindex = GET_PAGE_DIR_INDEX((uint32_t)virtual_address);
+    ptindex = GET_PAGE_TABLE_INDEX((uint32_t)virtual_address);
 
     // XXX: Page table entry already exists
     if(paging_directory_virtual[pdindex] != 0x00)
-        return;
+        return false;
 
     pt = kmalloc(PAGE_SIZE);
     if(!pt)
@@ -138,6 +140,8 @@ void paging_create_page_table(void *virtual_address, uint32_t page_flags, uint32
     pt_entry = page_flags & 0xFFF;
     pt_entry |= physical_address; 
     pt[ptindex] = pt_entry;
+
+    return true;
 }
 
 /**
@@ -146,16 +150,18 @@ void paging_create_page_table(void *virtual_address, uint32_t page_flags, uint32
  * @param      virtual_address   The virtual address to map the page to
  * @param[in]  page_flags        The flags for the page when it is created
  * @param[in]  mapping_flags     The flags for how to map the page
+ *
+ * @return     True if mapping successful, False if not
  */
-inline void paging_map(void *virtual_address, uint32_t flags, uint32_t mapping_flags)
+inline bool paging_map(void *virtual_address, uint32_t flags, uint32_t mapping_flags)
 {
     void * physical_address;
     
     physical_address = (void*)palloc_physical();
     if(physical_address == 0x00)
-        return;
+        return false;
     
-    map_implementation(physical_address, virtual_address, flags, mapping_flags);
+    return map_implementation(physical_address, virtual_address, flags, mapping_flags);
 }
 
 /**
@@ -165,15 +171,18 @@ inline void paging_map(void *virtual_address, uint32_t flags, uint32_t mapping_f
  * @param      virtual_address   The virtual address to map the page to
  * @param[in]  page_flags        The flags for the page when it is created
  * @param[in]  mapping_flags     The flags for how to map the page
+ *
+ * @return     True if mapping successful, False if not
  */
-inline void paging_map2(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags)
+inline bool paging_map2(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags)
 {
+    physical_address = (void*)PAGE_ALIGN((uint32_t)physical_address);
     if(physical_address == 0x00)
-        return;
+        return false;
 
     palloc_mark_inuse((uintptr_t)physical_address);
 
-    map_implementation(physical_address, virtual_address, page_flags, mapping_flags);
+    return map_implementation(physical_address, virtual_address, page_flags, mapping_flags);
 }
 
 /**
@@ -183,19 +192,22 @@ inline void paging_map2(void *physical_address, void *virtual_address, uint32_t 
  * @param      virtual_address   The virtual address to map the page to
  * @param[in]  page_flags        The flags for the page when it is created
  * @param[in]  mapping_flags     The flags for how to map the page
+ *
+ * @return     True if mapping successful, False if not
  */
-static void map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags)
+static bool map_implementation(void *physical_address, void *virtual_address, uint32_t page_flags, uint32_t mapping_flags)
 {
 	uint32_t *paging_directory, pdindex, ptindex;
 	uint32_t *pt, pt_entry;
     
     paging_directory = (uint32_t*)REFLECTED_PAGE_DIRECTORY_ADDRESS;
 
+    virtual_address = (void*)PAGE_ALIGN((uint32_t)virtual_address);
     if(virtual_address == 0x00)
-        return;
+        return false;
     
-    pdindex = (uint32_t)virtual_address >> 22;
-    ptindex = ((uint32_t)virtual_address >> 12) & 0x3FF;
+    pdindex = GET_PAGE_DIR_INDEX((uint32_t)virtual_address);
+    ptindex = GET_PAGE_TABLE_INDEX((uint32_t)virtual_address);
     
     if((paging_directory[pdindex]) == 0x00) {
     	// Create a new page table entry and update page directory
@@ -216,48 +228,58 @@ static void map_implementation(void *physical_address, void *virtual_address, ui
     	// TODO: Page already exists, what do we do now???
     	kprintf(KPRINT_DEBUG "Page already exists! (Physical: 0x%x, Virtual: 0x%x)\n",
     		(uintptr_t)physical_address, (uintptr_t)virtual_address);
-    	return;
+    	return false;
     }
 
+    // TODO: Might cause problems if a page is READ_WRITE and a non-READ_WRITE page is mapped into same table
     pt_entry = page_flags & 0xFFF;
     pt_entry |= (uint32_t)physical_address; 
     pt[ptindex] = pt_entry;
-
-    /**
-     * Wipe page contents
-    */
-    if(mapping_flags & MAPPING_WIPE_PAGE)
-        memset(virtual_address, 0, PAGE_SIZE);
 
     /**
      * Switch to the page table, flushing changes
      */
     if(mapping_flags & MAPPING_FLUSH_CHANGES)
         paging_switch_directory(paging_directory, 0);
+
+    /**
+     * Wipe page contents
+    */
+    if(mapping_flags & MAPPING_WIPE_PAGE) {
+        if(page_flags & PAGE_READ_WRITE) {
+            memset(virtual_address, 0, PAGE_SIZE);
+        } else {
+            // TODO: Wipe page if not READ_WRITE bit set
+        }
+    }
+
+    return true;
 }
 
 /**
  * @brief      Unmap a virtual address from memory
  *
  * @param      virtual_address  The virtual address
+ *
+ * @return     True if mapping successful, False if not
  */
-void paging_unmap(void *virtual_address)
+bool paging_unmap(void *virtual_address)
 {
     uint32_t *paging_directory, pdindex, ptindex, *pt;
     uintptr_t physical_address;
 
     paging_directory = (uintptr_t*)REFLECTED_PAGE_DIRECTORY_ADDRESS;
 
-    pdindex = (uint32_t)virtual_address >> 22;
-    ptindex = ((uint32_t)virtual_address >> 12) & 0x03FF;
+    pdindex = GET_PAGE_DIR_INDEX((uint32_t)virtual_address);
+    ptindex = GET_PAGE_TABLE_INDEX((uint32_t)virtual_address);
     
     // Nothing to do here as it doesn't exist
     if((paging_directory[pdindex]) == 0x00)
-        return;
+        return false;
 
     pt = (uint32_t*)(REFLECTED_PAGE_TABLE_BASE_ADDRESS + PAGE_SIZE * pdindex);
     if(pt != 0x00)
-        return;
+        return false;
     
     native_flush_tlb_single((uintptr_t)virtual_address);
 
@@ -266,6 +288,8 @@ void paging_unmap(void *virtual_address)
 
     // XXX: Might need reference counts when a page is mapped into multiple virtual / page directories
     //palloc_release((uintptr_t)physical_address);
+    
+    return true;
 }
 
 /**
@@ -322,7 +346,7 @@ void page_fault_handler(struct isr_arguments *args)
     if(args->error_code & 0x4) {
         // When set, the page fault was caused while CPL = 3.
         // This does not necessarily mean that the page fault was a privilege violation.
-        kprintf("PRIV VIOLATE\n");
+        kprintf("PRIV VIOLATE: 0x%x\n", args->cr2);
     }
 
     if(args->error_code & 0x8) {

@@ -13,14 +13,32 @@
 .extern tss_entry
 .type tss_entry, @object
 
+.extern irq_get_sync_depth
+.type irq_get_sync_depth, @function
+
+.extern irq_set_sync_depth
+.type irq_set_sync_depth, @function
+
 .global process_switch
 .type process_switch, @function
 
-.global irq_get_sync_depth
-.type irq_get_sync_depth, @function
+.global process_creation_complete
+.type process_creation_complete, @function
 
-.global irq_set_sync_depth
-.type irq_set_sync_depth, @function
+/* void process_creation_complete(void *eip); */
+process_creation_complete:
+    cli
+
+    // Get EIP
+    mov 4(%esp), %eax
+    
+    // Save EIP
+    mov current_process, %esi
+    mov %eax, 32(%esi)
+
+    // Reload
+    jmp reload_registers
+.size process_creation_complete, . - process_creation_complete
 
 /* void process_switch(struct process_control_block *next_process); */
 process_switch:
@@ -78,11 +96,13 @@ process_switch:
     // Check if CR3 needed to be updated
     mov %cr3, %ecx
     cmp %eax, %ecx
-    je .no_reload_page_dir
+    je reload_registers
     mov %eax, %cr3		// Only reload if different
+    jmp reload_registers	
+.size process_switch, . - process_switch
 
-.no_reload_page_dir:
-	// Reload registers
+reload_registers:
+    // Reload registers
     mov 24(%esi), %esp
     mov 28(%esi), %ebp
 
@@ -138,5 +158,5 @@ process_switch:
     mov 16(%esi), %edi
     mov 20(%esi), %esi
 
-	iret
-.size process_switch, . - process_switch
+    iret
+.size reload_registers, . - reload_registers
