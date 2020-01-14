@@ -7,15 +7,21 @@ KERNEL_HDA=hda.img
 
 KERNEL_INCLUDE_DIR=includes/kernel
 LIBC_INCLUDE_DIR=includes/libc
+DRIVERS_INCLUDE_DIR=includes/drivers
+
 LINKER_SCRIPT=linker.ld
 SYS_ROOT=sysroot
+
 KERNEL_BIN=$(KERNEL_NAME).bin
 KERNEL_ISO=$(KERNEL_NAME).iso
+
 MULTIBOOT_CMDLINE="serial"
 
-CFLAGS:=$(CFLAGS) --sysroot=$(SYS_ROOT) -isystem=/usr/include -I$(KERNEL_INCLUDE_DIR) -I$(LIBC_INCLUDE_DIR)
+CFLAGS:=$(CFLAGS) --sysroot=$(SYS_ROOT) -isystem=/usr/include
+CFLAGS:=$(CFLAGS) -I$(KERNEL_INCLUDE_DIR) -I$(LIBC_INCLUDE_DIR) -I$(DRIVERS_INCLUDE_DIR)
 CFLAGS:=$(CFLAGS) -O2 -g -std=gnu11 -ffreestanding -Wall -Wextra -nostdlib
 CFLAGS:=$(CFLAGS) -D__KERNEL_CODE
+
 LDFLAGS:=$(LDFLAGS)
 LIBS:=$(LIBS)
 
@@ -25,6 +31,7 @@ OBJS=\
 $(KERNEL_ARCH_CRT_I_OBJS)\
 $(KERNEL_OBJS)\
 $(LIBC_OBJS)\
+$(DRIVER_OBJS)\
 $(KERNEL_ARCH_CRT_N_OBJS)
 
 LINK_LIST=\
@@ -32,6 +39,7 @@ $(LDFLAGS)\
 $(KERNEL_ARCH_CRT_I_OBJS)\
 $(KERNEL_OBJS)\
 $(LIBC_OBJS)\
+$(DRIVER_OBJS)\
 $(LIBS)\
 $(KERNEL_ARCH_CRT_N_OBJS)
 
@@ -81,6 +89,7 @@ install_headers:
 	mkdir -p $(SYS_ROOT)/usr/include/libc
 	cp -R --preserve=timestamps $(KERNEL_INCLUDE_DIR)/. $(SYS_ROOT)/usr/include/kernel
 	cp -R --preserve=timestamps $(LIBC_INCLUDE_DIR)/. $(SYS_ROOT)/usr/include/libc
+	cp -R --preserve=timestamps $(DRIVERS_INCLUDE_DIR)/. $(SYS_ROOT)/usr/include/drivers
 
 install_kernel: $(KERNEL_BIN)
 	mkdir -p $(SYS_ROOT)/boot/grub

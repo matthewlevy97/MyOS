@@ -8,7 +8,6 @@ static uintptr_t stack_randomize_base();
 // TODO: Remove test program once actually loading things
 void test_program()
 {
-	asm volatile("cli");
 	while(1);
 }
 

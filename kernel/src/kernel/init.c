@@ -1,7 +1,8 @@
 #include <acpi.h>
-#include <macros.h>
-#include <kprint.h>
+#include <drivers.h>
 #include <kpanic.h>
+#include <kprint.h>
+#include <macros.h>
 #include <pci.h>
 #include <serial.h>
 #include <string.h>
@@ -85,9 +86,9 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	kprintf(KPRINT_DEBUG "PIT Initialized\n");
 
 	// TODO: ACPI information being overwritten, need to mark it inuse
-	//mb_acpi = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_ACPI_OLD);
-	//acpi_init(mb_acpi);
-	//kprintf(KPRINT_DEBUG "ACPI Initialized\n");
+	mb_acpi = multiboot_get_tag(mb_header, MULTIBOOT_TAG_TYPE_ACPI_OLD);
+	acpi_init(mb_acpi);
+	kprintf(KPRINT_DEBUG "ACPI Initialized\n");
 
 	pci_init();
 	kprintf(KPRINT_DEBUG "PCI Initialized\n");
@@ -102,6 +103,9 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 	irq_enable();
 
 	kprintf(KPRINT_SUCCESS "Kernel Loaded!\n");
+
+	// Setup drivers
+	drivers_init();
 
 	// XXX: Setup processes to run
 

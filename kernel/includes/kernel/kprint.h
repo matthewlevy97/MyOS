@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-#define VGA_BUFFER_ADDRESS 0xC03FF000
+#define VGA_BUFFER_ADDRESS 0xC07FF000
 
 #define CONSOLE_COLOR_CYAN  "\x1b[35m"
 #define CONSOLE_COLOR_RED   "\x1b[31m"

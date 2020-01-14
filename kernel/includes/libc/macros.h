@@ -1,6 +1,7 @@
 #pragma once
 
 #define FUNCTION_NO_RETURN __attribute__((noreturn))
+#define __used   __attribute__((__used__))
 
 #define MIN(x, y) (x < y ? x : y)
 #define MAX(x, y) (x > y ? x : y)
