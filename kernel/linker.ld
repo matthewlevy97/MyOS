@@ -16,11 +16,6 @@ SECTIONS
 		*(.text)
 	}
 
-	.rodata ALIGN(4K) : AT (ADDR (.rodata) - 0xC0000000)
-	{
-		*(.rodata)
-	}
-
 	.data ALIGN(4K) : AT (ADDR (.data) - 0xC0000000)
 	{
 		*(.data)
@@ -33,6 +28,13 @@ SECTIONS
 		*(.exitcall)
 		_driver_exitcall_end = .;
 	}
+
+	.rodata ALIGN(4K) : AT (ADDR (.rodata) - 0xC0000000)
+	{
+		*(.rodata)
+	}
+
+	_kernel_data_end = .;
 
 	.bss ALIGN(4K) : AT (ADDR (.bss) - 0xC0000000)
 	{

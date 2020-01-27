@@ -22,20 +22,20 @@ struct pci_device {
 	union {
 		uint32_t device_class_line;
 		struct {
-			uint8_t  device_class;
-			uint8_t  device_subclass;
-			uint8_t  programming_interface;
 			uint8_t  revision_id;
+			uint8_t  programming_interface;
+			uint8_t  device_subclass;
+			uint8_t  device_class;
 		};
 	};
 	
 	union {
 		uint32_t _header_type_line;
 		struct {
-			uint8_t  bist;
-			uint8_t  header_type;
-			uint8_t  latency_timer;
 			uint8_t  cache_line_size;
+			uint8_t  latency_timer;
+			uint8_t  header_type;
+			uint8_t  bist;
 		};
 	};
 };

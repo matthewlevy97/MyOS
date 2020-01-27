@@ -1,9 +1,10 @@
 #pragma once
 
 #include <driver_interface.h>
+#include <pci.h>
 
-int sata_init();
-MODULE_INIT(sata_init);
+int sata_init(struct pci_device device);
 
-int sata_exit();
-MODULE_EXIT(sata_exit);
+int32_t sata_read(void *data, void *buffer, uint32_t offset, uint32_t size);
+int32_t sata_write(void *data, void *buffer, uint32_t offset, uint32_t size);
+void sata_info(void *data, struct disk_info *info);

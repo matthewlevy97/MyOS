@@ -17,6 +17,7 @@
 #include <multiboot/multiboot_parser.h>
 #include <multitasking/process.h>
 #include <multitasking/scheduler.h>
+#include <mass_storage/storage_disk.h>
 
 extern uint32_t _kernel_end, _kernel_start, _kernel_offset;
 
@@ -111,6 +112,15 @@ void FUNCTION_NO_RETURN kinit(void * mb_header, uint32_t mb_magic)
 
 	// Start timer which runs scheduling code, etc.
 	install_interrupt_handler(IRQ0, timer_interrupt_handler);
+
+	char buf[1024];
+	int32_t bytes_read;
+	bytes_read = 0;
+	bytes_read = disk_read(0, buf, sizeof(buf), 0);
+	if(bytes_read) {
+		kprintf("Bytes Read: %d\n", bytes_read);
+		kprintf("<%s>\n", buf);
+	}
 
 	while(1);
 	__builtin_unreachable();

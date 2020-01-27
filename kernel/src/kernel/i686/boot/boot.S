@@ -47,7 +47,7 @@ _kernel_heap_page_table:
 .type _start, @function
 
 /*
-	TODO: Code assumes kernel is less than 3MB. Need to update should it become larger
+	TODO: Code assumes kernel is less than 7MB. Need to update should it become larger
 */
 _start:
 	movl $(_kernel_page_table - 0xC0000000), %edi
@@ -87,19 +87,52 @@ _start:
 		If we are here, map into second table
 	*/
 	movl $(_kernel_page_table_2 - 0xC0000000), %edi
-	movl $1023, %ecx
+	movl $1023, %ecx	// Save space for multiboot (if not already mapped) and VGA buffer
 	jmp 1b
 
 3:
-	/* Multiboot should be mapped when mapping in entire kernel */
-	movl %ebx, %esi
-	// Update ebx to new location
+	/* Map multiboot header */
+	// Map it into address 0xC0000000
+	movl $(_kernel_page_table - 0xC0000000), %edi
+	mov %ebx, %esi
+
+	// Size of multiboot header
+	mov (%esi), %ecx
+	shr $12, %ecx    // Number of pages needed for multiboot header
+
+	// Ensure pages needed less than number before kernel starts
+	movl $(_kernel_start - 0xC0000000), %edx
+	shr $12, %edx
+	// TODO: Set ecx to minimum value of ecx and edx
+
+	/* Page in multiboot header */
+	mov %ebx, %edx
+	andl $0xFFFFF000, %edx
+
+	// Map part of multiboot < PAGE_SIZE
+	inc %ecx
+4:
+	// Add to page table
+	mov %edx, %esi
+	orl $0x003, %esi
+	movl %esi, (%edi)
+
+	// Goto next entry
+	addl $4096, %ebx
+	addl $4, %edi
+
+	// Loop
+	loop 4b
+
+	// Update multiboot address to paged address
+	andl $0xFFF, %ebx
 	addl $0xC0000000, %ebx
 
+5:
 	/* Map VGA buffer to 0xC07FF000 as "present, writable" */
 	movl $(0x000B8000 | 0x003), _kernel_page_table_2 - 0xC0000000 + 1023 * 4
 
-	// Map kernel (identity and not)
+	// Map kernel (identity and paged)
 	movl $(_kernel_page_table - 0xC0000000 + 0x003), kernel_page_directory - 0xC0000000 + 0 * 4
 	movl $(_kernel_page_table_2 - 0xC0000000 + 0x003), kernel_page_directory - 0xC0000000 + 1 * 4
 	movl $(_kernel_page_table - 0xC0000000 + 0x003), kernel_page_directory - 0xC0000000 + 768 * 4
@@ -125,10 +158,10 @@ _start:
 	movl %ecx, %cr0
 
 	/* Jump to higher half */
-	lea 4f, %ecx
+	lea 6f, %ecx
 	jmp *%ecx
 
-4:
+6:
 	/* Paging setup here (in higher half). Unmap identity mapping */
 	movl $0, kernel_page_directory
 	movl $0, kernel_page_directory + 4
@@ -147,6 +180,6 @@ _start:
 	call kinit
 
 	cli
-5:	hlt
-	jmp 5b
+7:	hlt
+	jmp 7b
 .size _start, . - _start
